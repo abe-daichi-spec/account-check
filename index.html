@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>勘定科目 分類トレーニング（変換なし・BS/PL絞り込み）</title>
+  <title>勘定科目 分類トレーニング（変換なし・BS/PL・20問制限）</title>
   <style>
     :root{
       --border:#ddd;
@@ -14,7 +14,7 @@
       --warn:#b60;
       --radius:14px;
 
-      /* 色分け（必要ならここだけ変更） */
+      /* 色分け */
       --asset-bg: #eef6ff;   --asset-bd:#b7d7ff;
       --liab-bg:  #fff2f2;   --liab-bd:#ffc2c2;
       --equity-bg:#f3efff;   --equity-bd:#d2c6ff;
@@ -27,9 +27,9 @@
     .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
     .muted { color: var(--text-muted); font-size: 14px; }
     .big { font-size: 30px; font-weight: 800; margin: 10px 0 14px; line-height:1.2; }
-    .ok { color: var(--ok); font-weight: 800; }
-    .ng { color: var(--ng); font-weight: 800; }
-    .warn { color: var(--warn); font-weight: 800; }
+    .ok { color: var(--ok); font-weight: 900; }
+    .ng { color: var(--ng); font-weight: 900; }
+    .warn { color: var(--warn); font-weight: 900; }
     .small { font-size: 12px; color: var(--text-muted); }
     .pill { display:inline-block; padding:4px 10px; border:1px solid var(--border); border-radius:999px; font-size:12px; color:#444; }
 
@@ -41,7 +41,7 @@
     button { border-radius: 14px; border: 1px solid var(--border2); background: #fff; cursor: pointer; }
     button:hover { opacity: .92; }
     button:active { transform: translateY(1px); }
-    .actionBtn { padding: 10px 12px; font-weight: 700; white-space: nowrap; }
+    .actionBtn { padding: 10px 12px; font-weight: 800; white-space: nowrap; }
 
     .grid { display: grid; gap: 10px; margin-top: 12px; }
     @media (max-width: 520px){
@@ -80,17 +80,17 @@
     .tag.rev   { background: var(--rev-bg);   border-color: var(--rev-bd); }
     .tag.other { background: var(--other-bg); border-color: var(--other-bd); }
 
-　　#result { font-size: 22px; font-weight: 800; margin-top: 10px; }
-　　#result .ok, #result .ng { font-size: 28px; }
-    
+    /* ★ 正解/不正解を大きく */
+    #result { font-size: 22px; font-weight: 800; margin-top: 10px; }
+    #result .ok, #result .ng { font-size: 30px; }
   </style>
 </head>
 
 <body>
-  <h2>勘定科目 分類トレーニング（CSVそのまま・変換なし / BS・PL絞り込み）</h2>
+  <h2>勘定科目 分類トレーニング（CSVそのまま・変換なし / BS・PL絞り込み / 20問制限）</h2>
   <p class="muted">
     同じ階層に <span class="pill">accounts.csv</span>（見出し：<span class="pill">account,type</span>）を置いてください。<br>
-    ※判定はCSVのtypeそのまま（変換なし）。絞り込みは <b>BS/PL</b> を選べます。
+    ※判定はCSVのtypeそのまま（変換なし）。<b>出題に使う勘定科目は最大20個</b>に制限します。
   </p>
 
   <div class="card">
@@ -132,7 +132,13 @@
       <span>回答数：<span id="count">0</span></span>
       <span>正解数：<span id="correct">0</span></span>
       <span>正答率：<span id="rate">0</span>%</span>
-      <span class="small">（科目数：<span id="total">0</span> / タイプ数：<span id="typeCount">0</span> / 周回：<span id="lap">0</span>）</span>
+      <span class="small">
+        （全データ：<span id="total">0</span> /
+        出題に使用：<span id="used">0</span> /
+        タイプ数：<span id="typeCount">0</span> /
+        周回：<span id="lap">0</span> /
+        残り：<span id="remain">0</span>）
+      </span>
     </div>
 
     <p id="hint" class="small"></p>
@@ -140,10 +146,9 @@
 
 <script>
   const CSV_PATH = './accounts.csv';
+  const MAX_QUESTIONS = 20; // ★出題に使う勘定科目の上限
 
-  const MAX_QUESTIONS = 20; // 出題に使う勘定科目の上限
-  
-  // ====== 1) ボタンの並び順（必要ならここを並べ替え） ======
+  // ====== ボタンの並び順 ======
   const TYPE_ORDER = [
     '流動資産',
     '固定資産',
@@ -160,7 +165,7 @@
     'その他'
   ];
 
-  // ====== 2) type → 大分類（色分け用。判定は変換しない） ======
+  // ====== 色分け用：type → 大分類（判定は変換しない。色だけ） ======
   const TYPE_TO_GROUP = new Map([
     // BS
     ['流動資産','asset'], ['固定資産','asset'],
@@ -178,14 +183,14 @@
     exp: 'btn-exp', rev: 'btn-rev', other:'btn-other',
   };
 
-  // ====== 3) BS/PLの定義（絞り込み用） ======
+  // ====== BS/PLの定義（絞り込み用） ======
   const BS_TYPES = new Set(['流動資産','固定資産','流動負債','固定負債','純資産']);
   const PL_TYPES = new Set(['営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益']);
 
   // 状態
   let allItems = [];   // 全データ {name, type}
-  let items = [];      // フィルタ後の出題候補
-  let types = [];      // type一覧（ボタン用・並び替え済）
+  let items = [];      // フィルタ後
+  let types = [];      // type一覧（ボタン用）
   let current = null;
   let answered = false;
 
@@ -214,6 +219,13 @@
     deckIndex = 0;
     lap += 1;
     document.getElementById('lap').textContent = String(lap);
+    updateRemain();
+  }
+
+  function updateRemain(){
+    const remain = Math.max(0, deck.length - deckIndex);
+    document.getElementById('remain').textContent = String(remain);
+    document.getElementById('used').textContent = String(deck.length);
   }
 
   function sortTypesWithOrder(typeList){
@@ -253,7 +265,6 @@
 
     allItems = parsed;
 
-    // type一覧（CSVから）→ 並び替え
     const set = new Set(parsed.map(x => x.type));
     types = sortTypesWithOrder(Array.from(set));
 
@@ -269,79 +280,64 @@
     applyFiltersAndReady();
   }
 
-  // ====== 絞り込み（BS/PL＋個別type） ======
-  // filterType の値は以下を許可
-  // __ALL__ / __BS__ / __PL__ / __OTHER__ / 具体的type名
+  // filterType: __ALL__ / __BS__ / __PL__ / __OTHER__ / 具体type
   function allowByFilter(xType, filterType){
     if (filterType === '__ALL__') return true;
     if (filterType === '__BS__') return BS_TYPES.has(xType);
     if (filterType === '__PL__') return PL_TYPES.has(xType);
     if (filterType === '__OTHER__') return xType === 'その他';
-    return xType === filterType; // 個別type
+    return xType === filterType;
   }
 
   function buildTypeFilter(typeList){
-  const sel = document.getElementById('typeFilter');
-  const cur = sel.value;
+    const sel = document.getElementById('typeFilter');
+    const cur = sel.value;
+    sel.innerHTML = '';
 
-  // いったん空にする
-  sel.innerHTML = '';
+    const topOptions = [
+      { label: 'すべて', value: '__ALL__' },
+      { label: '貸借対照表（BS）', value: '__BS__' },
+      { label: '損益計算書（PL）', value: '__PL__' },
+      { label: 'その他のみ', value: '__OTHER__' },
+    ];
+    for (const o of topOptions) {
+      const opt = document.createElement('option');
+      opt.textContent = o.label;
+      opt.value = o.value;
+      sel.appendChild(opt);
+    }
 
-  // 上段：カテゴリ（BS/PLなど）
-  const topOptions = [
-    { label: 'すべて', value: '__ALL__' },
-    { label: '貸借対照表（BS）', value: '__BS__' },
-    { label: '損益計算書（PL）', value: '__PL__' },
-    { label: 'その他のみ', value: '__OTHER__' },
-  ];
+    const sep = document.createElement('option');
+    sep.textContent = '────────';
+    sep.value = '__SEP__';
+    sep.disabled = true;
+    sel.appendChild(sep);
 
-  for (const o of topOptions) {
-    const opt = document.createElement('option');
-    opt.textContent = o.label;
-    opt.value = o.value;
-    sel.appendChild(opt);
+    for (const t of typeList) {
+      const opt = document.createElement('option');
+      opt.textContent = t;
+      opt.value = t;
+      sel.appendChild(opt);
+    }
+
+    const allowedVals = new Set(['__ALL__','__BS__','__PL__','__OTHER__', ...typeList]);
+    sel.value = allowedVals.has(cur) ? cur : '__ALL__';
+
+    sel.onchange = () => {
+      if (sel.value === '__SEP__') sel.value = '__ALL__';
+      applyFiltersAndReady();
+    };
+    document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
   }
-
-  // 区切り（disabledにするが、appendChild方式なのでundefinedにはならない）
-  const sep = document.createElement('option');
-  sep.textContent = '────────';
-  sep.value = '__SEP__';
-  sep.disabled = true;
-  sel.appendChild(sep);
-
-  // 下段：個別type
-  for (const t of typeList) {
-    const opt = document.createElement('option');
-    opt.textContent = t;
-    opt.value = t;
-    sel.appendChild(opt);
-  }
-
-  // 選択状態をなるべく維持
-  const allowedVals = new Set(['__ALL__','__BS__','__PL__','__OTHER__', ...typeList]);
-  sel.value = allowedVals.has(cur) ? cur : '__ALL__';
-
-  sel.onchange = () => {
-    // 区切りを選べてしまった場合は戻す
-    if (sel.value === '__SEP__') sel.value = '__ALL__';
-    applyFiltersAndReady();
-  };
-
-  document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
-}
-
 
   function buildButtons(typeList){
     const wrap = document.getElementById('buttons');
     wrap.innerHTML = '';
-
     typeList.forEach(t => {
       const btn = document.createElement('button');
       btn.className = 'typeBtn';
-
       const grp = TYPE_TO_GROUP.get(t) || 'other';
       btn.classList.add(GROUP_TO_BTNCLASS[grp] || 'btn-other');
-
       btn.textContent = t;
       btn.onclick = () => answer(t);
       wrap.appendChild(btn);
@@ -352,28 +348,33 @@
     const includeOther = document.getElementById('toggleOther').checked;
     const filterType = document.getElementById('typeFilter').value;
 
-    items = allItems.filter(x => {
+    // 1) まず条件で絞る
+    let filtered = allItems.filter(x => {
       if (!includeOther && x.type === 'その他') return false;
       if (!allowByFilter(x.type, filterType)) return false;
       return true;
     });
 
-    // ★出題数制限（最大20件）
-　　　if (items.length > MAX_QUESTIONS) {
- 　　 const tmp = [...items];
-  　　shuffle(tmp);                 // 既存のshuffle関数を使う
-  　　items = tmp.slice(0, MAX_QUESTIONS);
-　　　}
-
-
-    if (!items.length){
+    if (!filtered.length){
       deck = []; deckIndex = 0; lap = 0;
       document.getElementById('lap').textContent = "0";
       document.getElementById('account').textContent = '出題できるデータが0件';
-      document.getElementById('result').innerHTML = `<span class="warn">条件を見直してください（「その他」除外＋BS/PL等）。</span>`;
+      document.getElementById('result').innerHTML = `<span class="warn">条件を見直してください。</span>`;
+      document.getElementById('used').textContent = "0";
+      document.getElementById('remain').textContent = "0";
       return;
     }
 
+    // 2) ★最大20件に制限（ここがポイント）
+    if (filtered.length > MAX_QUESTIONS) {
+      const tmp = [...filtered];
+      shuffle(tmp);
+      filtered = tmp.slice(0, MAX_QUESTIONS);
+    }
+
+    items = filtered;
+
+    // 山札準備
     lap = 0;
     prepareDeck();
     next();
@@ -411,9 +412,14 @@
 
   function next(){
     if (!deck.length) return;
-    if (deckIndex >= deck.length) prepareDeck();
+
+    if (deckIndex >= deck.length) {
+      prepareDeck(); // 1周終わったら再シャッフル
+    }
+
     show(deck[deckIndex]);
     deckIndex++;
+    updateRemain();
   }
 
   function resetScore(){
@@ -437,6 +443,8 @@
     document.getElementById('total').textContent = "0";
     document.getElementById('typeCount').textContent = "0";
     document.getElementById('lap').textContent = "0";
+    document.getElementById('used').textContent = "0";
+    document.getElementById('remain').textContent = "0";
 
     allItems = [];
     items = [];
@@ -467,6 +475,5 @@
 </script>
 </body>
 </html>
-
 
 
