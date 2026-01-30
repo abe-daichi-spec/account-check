@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>勘定科目 分類トレーニング（変換なし・押しやすいUI）</title>
+  <title>勘定科目 分類トレーニング（変換なし・押しやすいUI・シャッフル出題）</title>
   <style>
     :root{
       --border:#ddd;
@@ -24,39 +24,19 @@
     .small { font-size: 12px; color: var(--text-muted); }
     .pill { display:inline-block; padding:4px 10px; border:1px solid var(--border); border-radius:999px; font-size:12px; color:#444; }
 
-    /* ツールバー */
-    .toolbar {
-      display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
-      margin: 12px 0 8px;
-    }
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin: 12px 0 8px; }
     label { user-select:none; }
     select { padding: 10px 10px; border-radius: 12px; border: 1px solid var(--border2); }
     input[type="checkbox"] { transform: scale(1.15); }
 
-    /* ボタン基本 */
-    button {
-      border-radius: 14px;
-      border: 1px solid var(--border2);
-      background: #fff;
-      cursor: pointer;
-    }
+    button { border-radius: 14px; border: 1px solid var(--border2); background: #fff; cursor: pointer; }
     button:hover { opacity: .92; }
     button:active { transform: translateY(1px); }
 
-    /* 操作用の小ボタン */
-    .actionBtn {
-      padding: 10px 12px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
+    .actionBtn { padding: 10px 12px; font-weight: 700; white-space: nowrap; }
 
-    /* ==== 押しやすい「タイプボタン」グリッド ==== */
-    .grid {
-      display: grid;
-      gap: 10px;
-      margin-top: 12px;
-    }
-    /* スマホ：2列 / タブレット：3列 / PC：4列 */
+    /* 押しやすいタイプボタン：グリッド */
+    .grid { display: grid; gap: 10px; margin-top: 12px; }
     @media (max-width: 520px){
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -68,28 +48,23 @@
     }
 
     .typeBtn{
-      padding: 16px 10px;     /* タップ領域を大きく */
-      min-height: 56px;       /* 高さを確保 */
+      padding: 16px 10px;
+      min-height: 56px;
       font-size: 16px;
       font-weight: 800;
       line-height: 1.1;
     }
 
-    /* 正誤が出た後に押し間違いしにくいように、次へを目立たせる（見た目は控えめ） */
-    .nextArea{
-      display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;
-    }
-    .summary{
-      margin-top: 10px;
-      display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center;
-    }
+    .summary { margin-top: 10px; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
   </style>
 </head>
+
 <body>
-  <h2>勘定科目 分類トレーニング（CSVそのまま・変換なし / 押しやすいUI）</h2>
+  <h2>勘定科目 分類トレーニング（CSVそのまま・変換なし / 押しやすいUI / シャッフル出題）</h2>
   <p class="muted">
     同じ階層に <span class="pill">accounts.csv</span>（見出し：<span class="pill">account,type</span>）を置いてください。<br>
-    ※この版は <b>5分類に変換しません</b>。CSVのtype（例：流動資産/営業外収益…）をそのまま当てます。
+    ※この版は <b>5分類に変換しません</b>。CSVのtype（例：流動資産/営業外収益…）をそのまま当てます。<br>
+    ※出題は「山札（全問シャッフル→順番に出す）」方式なので、偏りにくいです。
   </p>
 
   <div class="card">
@@ -114,7 +89,6 @@
       <button class="actionBtn" onclick="reload()">CSV再読み込み</button>
     </div>
 
-    <!-- タイプボタン：押しやすいグリッド -->
     <div id="buttons" class="grid"></div>
 
     <p id="result" class="muted"></p>
@@ -123,22 +97,13 @@
       <span>回答数：<span id="count">0</span></span>
       <span>正解数：<span id="correct">0</span></span>
       <span>正答率：<span id="rate">0</span>%</span>
-      <span class="small">（科目数：<span id="total">0</span> / タイプ数：<span id="typeCount">0</span>）</span>
+      <span class="small">（科目数：<span id="total">0</span> / タイプ数：<span id="typeCount">0</span> / 周回：<span id="lap">0</span>）</span>
     </div>
 
     <p id="hint" class="small"></p>
   </div>
 
 <script>
-
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-}
-
-
   const CSV_PATH = './accounts.csv';
 
   // 状態
@@ -151,8 +116,30 @@ function shuffle(array) {
   let count = 0;
   let correct = 0;
 
+  // 山札（シャッフルして順番に出す）
+  let deck = [];
+  let deckIndex = 0;
+  let lap = 0;
+
   function normalizeType(s){
+    // タイプの表記ゆれ対策：前後空白や連続空白を除去
     return String(s ?? '').replace(/\s+/g,' ').trim();
+  }
+
+  // Fisher–Yates shuffle
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  function prepareDeck(){
+    deck = [...items];
+    shuffle(deck);
+    deckIndex = 0;
+    lap += 1;
+    document.getElementById('lap').textContent = String(lap);
   }
 
   async function loadCSV() {
@@ -201,7 +188,6 @@ function shuffle(array) {
   function buildButtons(typeList){
     const wrap = document.getElementById('buttons');
     wrap.innerHTML = '';
-
     typeList.forEach(t => {
       const btn = document.createElement('button');
       btn.className = 'typeBtn';
@@ -246,24 +232,19 @@ function shuffle(array) {
     });
 
     if (!items.length){
+      deck = []; deckIndex = 0; lap = 0;
+      document.getElementById('lap').textContent = "0";
       document.getElementById('account').textContent = '出題できるデータが0件';
       document.getElementById('result').innerHTML = `<span class="warn">条件を見直してください（「その他」除外＋絞り込み等）。</span>`;
       return;
     }
+
+    // ★ここが「ちゃんとランダム」：山札を作って順に出す
+    lap = 0;
+    prepareDeck();
     next();
   }
 
-  function pickRandom(){
-
-let deck = [];
-let deckIndex = 0;
-
-function prepareDeck(){
-  deck = [...items];   // itemsをコピー
-  shuffle(deck);      // シャッフル
-  deckIndex = 0;
-}
-    
   function renderScore(){
     document.getElementById("count").textContent = count;
     document.getElementById("correct").textContent = correct;
@@ -295,23 +276,29 @@ function prepareDeck(){
   }
 
   function next(){
+    // 山札が空なら何もしない
+    if (!deck.length) return;
 
-    function next(){
-  if (!deck.length) return;
+    // 1周終わったら、またシャッフルして次の周回へ
+    if (deckIndex >= deck.length) {
+      prepareDeck();
+    }
 
-  if (deckIndex >= deck.length) {
-    prepareDeck();    // 全部出たらもう一度シャッフル
+    show(deck[deckIndex]);
+    deckIndex++;
   }
-  show(deck[deckIndex]);
-  deckIndex++;
-}
-    
+
   function resetScore(){
     count = 0;
     correct = 0;
     renderScore();
-    prepareDeck();
-    next();
+
+    // スコアだけでなく、出題も最初から（新しくシャッフル）
+    lap = 0;
+    if (items.length) {
+      prepareDeck();
+      next();
+    }
   }
 
   async function reload(){
@@ -322,12 +309,17 @@ function prepareDeck(){
     document.getElementById("typeFilter").innerHTML = `<option value="__ALL__">すべて</option>`;
     document.getElementById('total').textContent = "0";
     document.getElementById('typeCount').textContent = "0";
+    document.getElementById('lap').textContent = "0";
 
     allItems = [];
     items = [];
     types = [];
     current = null;
     answered = false;
+
+    deck = [];
+    deckIndex = 0;
+    lap = 0;
 
     count = 0;
     correct = 0;
@@ -348,6 +340,3 @@ function prepareDeck(){
 </script>
 </body>
 </html>
-
-
-
