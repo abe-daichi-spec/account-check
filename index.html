@@ -289,7 +289,10 @@
     sel.add(optAll); sel.add(optBS); sel.add(optPL); sel.add(optOt);
 
     // 区切り（見た目用）
-    sel.add(new Option('────────', '__SEP__')).disabled = true;
+    const sep = new Option('────────', '__SEP__');
+　　sep.disabled = true;
+　　sel.add(sep);
+
 
     // 下段：個別type
     typeList.forEach(t => sel.add(new Option(t, t)));
@@ -434,3 +437,4 @@
 </script>
 </body>
 </html>
+
