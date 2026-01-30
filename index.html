@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>勘定科目 分類トレーニング</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 24px auto; padding: 0 12px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; }
+    button { padding: 10px 12px; margin: 6px 6px 0 0; border-radius: 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+    button:hover { opacity: .9; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .muted { color: #666; font-size: 14px; }
+    .big { font-size: 28px; font-weight: 700; margin: 8px 0 12px; }
+    .ok { color: #0a7; font-weight: 700; }
+    .ng { color: #c33; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h2>勘定科目 分類トレーニング（超シンプル版）</h2>
+
+  <div class="card">
+    <div class="muted">次の勘定科目はどの分類？</div>
+    <div id="account" class="big">—</div>
+
+    <div class="row">
+      <button onclick="answer('資産')">資産</button>
+      <button onclick="answer('負債')">負債</button>
+      <button onclick="answer('純資産')">純資産</button>
+      <button onclick="answer('収益')">収益</button>
+      <button onclick="answer('費用')">費用</button>
+    </div>
+
+    <p id="result" class="muted"></p>
+
+    <div class="row">
+      <button onclick="next()">次へ</button>
+      <button onclick="resetScore()">リセット</button>
+    </div>
+
+    <p class="muted">
+      回答数：<span id="count">0</span>　
+      正解数：<span id="correct">0</span>　
+      正答率：<span id="rate">0</span>%
+    </p>
+  </div>
+
+<script>
+  // まずは例として20個。あとで先生の科目セットに入れ替え可。
+  const items = [
+    { name: "現金", type: "資産" },
+    { name: "当座預金", type: "資産" },
+    { name: "売掛金", type: "資産" },
+    { name: "受取手形", type: "資産" },
+    { name: "商品", type: "資産" },
+    { name: "備品", type: "資産" },
+    { name: "建物", type: "資産" },
+
+    { name: "買掛金", type: "負債" },
+    { name: "支払手形", type: "負債" },
+    { name: "借入金", type: "負債" },
+
+    { name: "資本金", type: "純資産" },
+    { name: "繰越利益剰余金", type: "純資産" },
+
+    { name: "売上", type: "収益" },
+    { name: "受取利息", type: "収益" },
+
+    { name: "仕入", type: "費用" },
+    { name: "給料", type: "費用" },
+    { name: "支払家賃", type: "費用" },
+    { name: "消耗品費", type: "費用" },
+    { name: "通信費", type: "費用" },
+    { name: "支払利息", type: "費用" },
+  ];
+
+  let current = null;
+  let answered = false;
+  let count = 0;
+  let correct = 0;
+
+  function pickRandom() {
+    return items[Math.floor(Math.random() * items.length)];
+  }
+
+  function renderScore() {
+    document.getElementById("count").textContent = count;
+    document.getElementById("correct").textContent = correct;
+    const rate = count === 0 ? 0 : Math.round((correct / count) * 100);
+    document.getElementById("rate").textContent = rate;
+  }
+
+  function show(item) {
+    current = item;
+    answered = false;
+    document.getElementById("account").textContent = item.name;
+    document.getElementById("result").textContent = "";
+  }
+
+  function answer(type) {
+    if (!current || answered) return;
+    answered = true;
+    count++;
+
+    const ok = (type === current.type);
+    if (ok) correct++;
+
+    document.getElementById("result").innerHTML =
+      ok
+        ? `<span class="ok">正解！</span>（${current.name} → ${current.type}）`
+        : `<span class="ng">不正解</span>（あなた：${type} / 正解：${current.type}）`;
+
+    renderScore();
+  }
+
+  function next() {
+    show(pickRandom());
+  }
+
+  function resetScore() {
+    count = 0;
+    correct = 0;
+    renderScore();
+    next();
+  }
+
+  // 初期表示
+  resetScore();
+</script>
+</body>
+</html>
