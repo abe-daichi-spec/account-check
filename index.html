@@ -275,39 +275,55 @@
   }
 
   function buildTypeFilter(typeList){
-    const sel = document.getElementById('typeFilter');
-    const cur = sel.value;
+  const sel = document.getElementById('typeFilter');
+  const cur = sel.value;
 
-    sel.innerHTML = '';
+  // いったん空にする
+  sel.innerHTML = '';
 
-    // 上段：カテゴリ
-    const optAll = new Option('すべて', '__ALL__');
-    const optBS  = new Option('貸借対照表（BS）', '__BS__');
-    const optPL  = new Option('損益計算書（PL）', '__PL__');
-    const optOt  = new Option('その他のみ', '__OTHER__');
+  // 上段：カテゴリ（BS/PLなど）
+  const topOptions = [
+    { label: 'すべて', value: '__ALL__' },
+    { label: '貸借対照表（BS）', value: '__BS__' },
+    { label: '損益計算書（PL）', value: '__PL__' },
+    { label: 'その他のみ', value: '__OTHER__' },
+  ];
 
-    sel.add(optAll); sel.add(optBS); sel.add(optPL); sel.add(optOt);
-
-    // 区切り（見た目用）
-    const sep = new Option('────────', '__SEP__');
-　　sep.disabled = true;
-　　sel.add(sep);
-
-
-    // 下段：個別type
-    typeList.forEach(t => sel.add(new Option(t, t)));
-
-    // 選択状態をなるべく維持
-    const allowedVals = new Set(['__ALL__','__BS__','__PL__','__OTHER__', ...typeList]);
-    sel.value = allowedVals.has(cur) ? cur : '__ALL__';
-
-    sel.onchange = () => {
-      // 区切りを選べないように強制戻し
-      if (sel.value === '__SEP__') sel.value = '__ALL__';
-      applyFiltersAndReady();
-    };
-    document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
+  for (const o of topOptions) {
+    const opt = document.createElement('option');
+    opt.textContent = o.label;
+    opt.value = o.value;
+    sel.appendChild(opt);
   }
+
+  // 区切り（disabledにするが、appendChild方式なのでundefinedにはならない）
+  const sep = document.createElement('option');
+  sep.textContent = '────────';
+  sep.value = '__SEP__';
+  sep.disabled = true;
+  sel.appendChild(sep);
+
+  // 下段：個別type
+  for (const t of typeList) {
+    const opt = document.createElement('option');
+    opt.textContent = t;
+    opt.value = t;
+    sel.appendChild(opt);
+  }
+
+  // 選択状態をなるべく維持
+  const allowedVals = new Set(['__ALL__','__BS__','__PL__','__OTHER__', ...typeList]);
+  sel.value = allowedVals.has(cur) ? cur : '__ALL__';
+
+  sel.onchange = () => {
+    // 区切りを選べてしまった場合は戻す
+    if (sel.value === '__SEP__') sel.value = '__ALL__';
+    applyFiltersAndReady();
+  };
+
+  document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
+}
+
 
   function buildButtons(typeList){
     const wrap = document.getElementById('buttons');
@@ -437,4 +453,5 @@
 </script>
 </body>
 </html>
+
 
