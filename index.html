@@ -79,6 +79,10 @@
     .tag.exp   { background: var(--exp-bg);   border-color: var(--exp-bd); }
     .tag.rev   { background: var(--rev-bg);   border-color: var(--rev-bd); }
     .tag.other { background: var(--other-bg); border-color: var(--other-bd); }
+
+　　#result { font-size: 22px; font-weight: 800; margin-top: 10px; }
+　　#result .ok, #result .ng { font-size: 28px; }
+    
   </style>
 </head>
 
@@ -137,6 +141,8 @@
 <script>
   const CSV_PATH = './accounts.csv';
 
+  const MAX_QUESTIONS = 20; // 出題に使う勘定科目の上限
+  
   // ====== 1) ボタンの並び順（必要ならここを並べ替え） ======
   const TYPE_ORDER = [
     '流動資産',
@@ -352,6 +358,14 @@
       return true;
     });
 
+    // ★出題数制限（最大20件）
+　　　if (items.length > MAX_QUESTIONS) {
+ 　　 const tmp = [...items];
+  　　shuffle(tmp);                 // 既存のshuffle関数を使う
+  　　items = tmp.slice(0, MAX_QUESTIONS);
+　　　}
+
+
     if (!items.length){
       deck = []; deckIndex = 0; lap = 0;
       document.getElementById('lap').textContent = "0";
@@ -453,5 +467,6 @@
 </script>
 </body>
 </html>
+
 
 
