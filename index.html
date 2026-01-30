@@ -245,9 +245,16 @@
   }
 
   function pickRandom(){
-    return items[Math.floor(Math.random() * items.length)];
-  }
 
+let deck = [];
+let deckIndex = 0;
+
+function prepareDeck(){
+  deck = [...items];   // itemsをコピー
+  shuffle(deck);      // シャッフル
+  deckIndex = 0;
+}
+    
   function renderScore(){
     document.getElementById("count").textContent = count;
     document.getElementById("correct").textContent = correct;
@@ -279,14 +286,22 @@
   }
 
   function next(){
-    if (!items.length) return;
-    show(pickRandom());
-  }
 
+    function next(){
+  if (!deck.length) return;
+
+  if (deckIndex >= deck.length) {
+    prepareDeck();    // 全部出たらもう一度シャッフル
+  }
+  show(deck[deckIndex]);
+  deckIndex++;
+}
+    
   function resetScore(){
     count = 0;
     correct = 0;
     renderScore();
+    prepareDeck();
     next();
   }
 
@@ -324,4 +339,5 @@
 </script>
 </body>
 </html>
+
 
