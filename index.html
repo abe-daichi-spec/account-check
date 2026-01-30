@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>勘定科目 分類トレーニン</title>
+  <title>勘定科目 分類トレーニング（変換なし・色分け・並び順固定）</title>
   <style>
     :root{
       --border:#ddd;
@@ -13,7 +13,16 @@
       --ng:#c33;
       --warn:#b60;
       --radius:14px;
+
+      /* ここで“色分け”の見た目を調整できます（色名は変えなくてOK） */
+      --asset-bg: #eef6ff;   --asset-bd:#b7d7ff;
+      --liab-bg:  #fff2f2;   --liab-bd:#ffc2c2;
+      --equity-bg:#f3efff;   --equity-bd:#d2c6ff;
+      --exp-bg:   #fff7e6;   --exp-bd:#ffd08a;
+      --rev-bg:   #effff4;   --rev-bd:#b7f0c6;
+      --other-bg: #f5f5f5;   --other-bd:#d9d9d9;
     }
+
     body { font-family: sans-serif; max-width: 920px; margin: 24px auto; padding: 0 12px; }
     .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
     .muted { color: var(--text-muted); font-size: 14px; }
@@ -32,10 +41,9 @@
     button { border-radius: 14px; border: 1px solid var(--border2); background: #fff; cursor: pointer; }
     button:hover { opacity: .92; }
     button:active { transform: translateY(1px); }
-
     .actionBtn { padding: 10px 12px; font-weight: 700; white-space: nowrap; }
 
-    /* 押しやすいタイプボタン：グリッド */
+    /* ボタン：押しやすいグリッド */
     .grid { display: grid; gap: 10px; margin-top: 12px; }
     @media (max-width: 520px){
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -46,25 +54,40 @@
     @media (min-width: 861px){
       .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
-
     .typeBtn{
       padding: 16px 10px;
       min-height: 56px;
       font-size: 16px;
       font-weight: 800;
       line-height: 1.1;
+      text-align: center;
     }
 
+    /* ===== 色分け（大分類） ===== */
+    .btn-asset { background: var(--asset-bg); border-color: var(--asset-bd); }
+    .btn-liab  { background: var(--liab-bg);  border-color: var(--liab-bd);  }
+    .btn-equity{ background: var(--equity-bg);border-color: var(--equity-bd);}
+    .btn-exp   { background: var(--exp-bg);   border-color: var(--exp-bd);   }
+    .btn-rev   { background: var(--rev-bg);   border-color: var(--rev-bd);   }
+    .btn-other { background: var(--other-bg); border-color: var(--other-bd); }
+
     .summary { margin-top: 10px; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
+    .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top: 8px; }
+    .tag { font-size:12px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); }
+    .tag.asset { background: var(--asset-bg); border-color: var(--asset-bd); }
+    .tag.liab  { background: var(--liab-bg);  border-color: var(--liab-bd); }
+    .tag.equity{ background: var(--equity-bg);border-color: var(--equity-bd);}
+    .tag.exp   { background: var(--exp-bg);   border-color: var(--exp-bd); }
+    .tag.rev   { background: var(--rev-bg);   border-color: var(--rev-bd); }
+    .tag.other { background: var(--other-bg); border-color: var(--other-bd); }
   </style>
 </head>
 
 <body>
-  <h2>勘定科目 分類トレーニング</h2>
+  <h2>勘定科目 分類トレーニング（CSVそのまま・変換なし / 並び順固定 / 色分け / シャッフル出題）</h2>
   <p class="muted">
     同じ階層に <span class="pill">accounts.csv</span>（見出し：<span class="pill">account,type</span>）を置いてください。<br>
-    ※この版は <b>5分類に変換しません</b>。CSVのtype（例：流動資産/営業外収益…）をそのまま当てます。<br>
-    ※出題は「山札（全問シャッフル→順番に出す）」方式なので、偏りにくいです。
+    ※この版は <b>5分類に変換しません</b>。ただしボタンは“大分類”で色分けします（判定はtypeそのまま）。
   </p>
 
   <div class="card">
@@ -89,6 +112,15 @@
       <button class="actionBtn" onclick="reload()">CSV再読み込み</button>
     </div>
 
+    <div class="legend">
+      <span class="tag asset">資産</span>
+      <span class="tag liab">負債</span>
+      <span class="tag equity">純資産</span>
+      <span class="tag exp">費用</span>
+      <span class="tag rev">収益</span>
+      <span class="tag other">その他</span>
+    </div>
+
     <div id="buttons" class="grid"></div>
 
     <p id="result" class="muted"></p>
@@ -106,27 +138,81 @@
 <script>
   const CSV_PATH = './accounts.csv';
 
+  // ====== 1) ボタンの並び順（先生がここを並べ替えればOK） ======
+  const TYPE_ORDER = [
+    '流動資産',
+    '固定資産',
+    '流動負債',
+    '固定負債',
+    '純資産',
+    '営業費用',
+    '販売費および一般管理費',
+    '営業外費用',
+    '特別損失',
+    '営業収益',
+    '営業外収益',
+    '特別利益',
+    'その他'
+  ];
+
+  // ====== 2) 色分け用：type → 大分類（判定は変換しない。色だけ。） ======
+  // ここも先生の運用に合わせて調整できます
+  const TYPE_TO_GROUP = new Map([
+    // 資産
+    ['流動資産','asset'],
+    ['固定資産','asset'],
+
+    // 負債
+    ['流動負債','liab'],
+    ['固定負債','liab'],
+
+    // 純資産
+    ['純資産','equity'],
+
+    // 費用
+    ['営業費用','exp'],
+    ['販売費および一般管理費','exp'],
+    ['営業外費用','exp'],
+    ['特別損失','exp'],
+
+    // 収益
+    ['営業収益','rev'],
+    ['営業外収益','rev'],
+    ['特別利益','rev'],
+
+    // その他
+    ['その他','other'],
+  ]);
+
+  const GROUP_TO_BTNCLASS = {
+    asset: 'btn-asset',
+    liab: 'btn-liab',
+    equity:'btn-equity',
+    exp:  'btn-exp',
+    rev:  'btn-rev',
+    other:'btn-other',
+  };
+
   // 状態
   let allItems = [];   // 全データ {name, type}
   let items = [];      // フィルタ後の出題候補
-  let types = [];      // type一覧
+  let types = [];      // type一覧（ボタン用）
   let current = null;
   let answered = false;
 
   let count = 0;
   let correct = 0;
 
-  // 山札（シャッフルして順番に出す）
+  // 山札（全問シャッフル→順に出す）
   let deck = [];
   let deckIndex = 0;
   let lap = 0;
 
   function normalizeType(s){
-    // タイプの表記ゆれ対策：前後空白や連続空白を除去
     return String(s ?? '').replace(/\s+/g,' ').trim();
   }
 
-  // Fisher–Yates shuffle
+  // shuffle
   function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -140,6 +226,17 @@
     deckIndex = 0;
     lap += 1;
     document.getElementById('lap').textContent = String(lap);
+  }
+
+  // 並び順に従って types を並べる（TYPE_ORDERにないtypeは末尾に回す）
+  function sortTypesWithOrder(typeList){
+    const orderIndex = new Map(TYPE_ORDER.map((t,i)=>[t,i]));
+    return [...typeList].sort((a,b)=>{
+      const ai = orderIndex.has(a) ? orderIndex.get(a) : 9999;
+      const bi = orderIndex.has(b) ? orderIndex.get(b) : 9999;
+      if (ai !== bi) return ai - bi;
+      return a.localeCompare(b, 'ja');
+    });
   }
 
   async function loadCSV() {
@@ -169,9 +266,9 @@
 
     allItems = parsed;
 
-    // type一覧
+    // type一覧（CSVから）
     const set = new Set(parsed.map(x => x.type));
-    types = Array.from(set).sort((a,b) => a.localeCompare(b,'ja'));
+    types = sortTypesWithOrder(Array.from(set));
 
     document.getElementById('total').textContent = String(allItems.length);
     document.getElementById('typeCount').textContent = String(types.length);
@@ -188,9 +285,14 @@
   function buildButtons(typeList){
     const wrap = document.getElementById('buttons');
     wrap.innerHTML = '';
+
     typeList.forEach(t => {
       const btn = document.createElement('button');
       btn.className = 'typeBtn';
+
+      const grp = TYPE_TO_GROUP.get(t) || 'other';
+      btn.classList.add(GROUP_TO_BTNCLASS[grp] || 'btn-other');
+
       btn.textContent = t;
       btn.onclick = () => answer(t);
       wrap.appendChild(btn);
@@ -239,7 +341,6 @@
       return;
     }
 
-    // ★ここが「ちゃんとランダム」：山札を作って順に出す
     lap = 0;
     prepareDeck();
     next();
@@ -276,12 +377,10 @@
   }
 
   function next(){
-    // 山札が空なら何もしない
     if (!deck.length) return;
 
-    // 1周終わったら、またシャッフルして次の周回へ
     if (deckIndex >= deck.length) {
-      prepareDeck();
+      prepareDeck(); // 1周終わったら再シャッフル
     }
 
     show(deck[deckIndex]);
@@ -293,7 +392,6 @@
     correct = 0;
     renderScore();
 
-    // スコアだけでなく、出題も最初から（新しくシャッフル）
     lap = 0;
     if (items.length) {
       prepareDeck();
@@ -340,4 +438,3 @@
 </script>
 </body>
 </html>
-
