@@ -3,101 +3,266 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>勘定科目 分類トレーニング</title>
+  <title>勘定科目 分類トレーニング（変換なし・押しやすいUI）</title>
   <style>
-    body { font-family: sans-serif; max-width: 700px; margin: 24px auto; padding: 0 12px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; }
-    button { padding: 10px 12px; margin: 6px 6px 0 0; border-radius: 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
-    button:hover { opacity: .9; }
-    .row { display: flex; flex-wrap: wrap; gap: 8px; }
-    .muted { color: #666; font-size: 14px; }
-    .big { font-size: 28px; font-weight: 700; margin: 8px 0 12px; }
-    .ok { color: #0a7; font-weight: 700; }
-    .ng { color: #c33; font-weight: 700; }
+    :root{
+      --border:#ddd;
+      --border2:#ccc;
+      --text-muted:#666;
+      --ok:#0a7;
+      --ng:#c33;
+      --warn:#b60;
+      --radius:14px;
+    }
+    body { font-family: sans-serif; max-width: 920px; margin: 24px auto; padding: 0 12px; }
+    .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .muted { color: var(--text-muted); font-size: 14px; }
+    .big { font-size: 30px; font-weight: 800; margin: 10px 0 14px; line-height:1.2; }
+    .ok { color: var(--ok); font-weight: 800; }
+    .ng { color: var(--ng); font-weight: 800; }
+    .warn { color: var(--warn); font-weight: 800; }
+    .small { font-size: 12px; color: var(--text-muted); }
+    .pill { display:inline-block; padding:4px 10px; border:1px solid var(--border); border-radius:999px; font-size:12px; color:#444; }
+
+    /* ツールバー */
+    .toolbar {
+      display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+      margin: 12px 0 8px;
+    }
+    label { user-select:none; }
+    select { padding: 10px 10px; border-radius: 12px; border: 1px solid var(--border2); }
+    input[type="checkbox"] { transform: scale(1.15); }
+
+    /* ボタン基本 */
+    button {
+      border-radius: 14px;
+      border: 1px solid var(--border2);
+      background: #fff;
+      cursor: pointer;
+    }
+    button:hover { opacity: .92; }
+    button:active { transform: translateY(1px); }
+
+    /* 操作用の小ボタン */
+    .actionBtn {
+      padding: 10px 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* ==== 押しやすい「タイプボタン」グリッド ==== */
+    .grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    /* スマホ：2列 / タブレット：3列 / PC：4列 */
+    @media (max-width: 520px){
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 521px) and (max-width: 860px){
+      .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (min-width: 861px){
+      .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    .typeBtn{
+      padding: 16px 10px;     /* タップ領域を大きく */
+      min-height: 56px;       /* 高さを確保 */
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    /* 正誤が出た後に押し間違いしにくいように、次へを目立たせる（見た目は控えめ） */
+    .nextArea{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;
+    }
+    .summary{
+      margin-top: 10px;
+      display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center;
+    }
   </style>
 </head>
 <body>
-  <h2>勘定科目 分類トレーニング（超シンプル版）</h2>
+  <h2>勘定科目 分類トレーニング（CSVそのまま・変換なし / 押しやすいUI）</h2>
+  <p class="muted">
+    同じ階層に <span class="pill">accounts.csv</span>（見出し：<span class="pill">account,type</span>）を置いてください。<br>
+    ※この版は <b>5分類に変換しません</b>。CSVのtype（例：流動資産/営業外収益…）をそのまま当てます。
+  </p>
 
   <div class="card">
-    <div class="muted">次の勘定科目はどの分類？</div>
-    <div id="account" class="big">—</div>
+    <div class="muted">次の勘定科目の「タイプ」は？</div>
+    <div id="account" class="big">読み込み中…</div>
 
-    <div class="row">
-      <button onclick="answer('資産')">資産</button>
-      <button onclick="answer('負債')">負債</button>
-      <button onclick="answer('純資産')">純資産</button>
-      <button onclick="answer('収益')">収益</button>
-      <button onclick="answer('費用')">費用</button>
+    <div class="toolbar">
+      <label class="small">
+        <input id="toggleOther" type="checkbox" checked>
+        「その他」も出題に含める
+      </label>
+
+      <label class="small">
+        出題タイプ絞り込み：
+        <select id="typeFilter">
+          <option value="__ALL__">すべて</option>
+        </select>
+      </label>
+
+      <button class="actionBtn" onclick="next()">次へ</button>
+      <button class="actionBtn" onclick="resetScore()">リセット</button>
+      <button class="actionBtn" onclick="reload()">CSV再読み込み</button>
     </div>
+
+    <!-- タイプボタン：押しやすいグリッド -->
+    <div id="buttons" class="grid"></div>
 
     <p id="result" class="muted"></p>
 
-    <div class="row">
-      <button onclick="next()">次へ</button>
-      <button onclick="resetScore()">リセット</button>
+    <div class="summary muted">
+      <span>回答数：<span id="count">0</span></span>
+      <span>正解数：<span id="correct">0</span></span>
+      <span>正答率：<span id="rate">0</span>%</span>
+      <span class="small">（科目数：<span id="total">0</span> / タイプ数：<span id="typeCount">0</span>）</span>
     </div>
 
-    <p class="muted">
-      回答数：<span id="count">0</span>　
-      正解数：<span id="correct">0</span>　
-      正答率：<span id="rate">0</span>%
-    </p>
+    <p id="hint" class="small"></p>
   </div>
 
 <script>
-  // まずは例として20個。あとで先生の科目セットに入れ替え可。
-  const items = [
-    { name: "現金", type: "資産" },
-    { name: "当座預金", type: "資産" },
-    { name: "売掛金", type: "資産" },
-    { name: "受取手形", type: "資産" },
-    { name: "商品", type: "資産" },
-    { name: "備品", type: "資産" },
-    { name: "建物", type: "資産" },
+  const CSV_PATH = './accounts.csv';
 
-    { name: "買掛金", type: "負債" },
-    { name: "支払手形", type: "負債" },
-    { name: "借入金", type: "負債" },
-
-    { name: "資本金", type: "純資産" },
-    { name: "繰越利益剰余金", type: "純資産" },
-
-    { name: "売上", type: "収益" },
-    { name: "受取利息", type: "収益" },
-
-    { name: "仕入", type: "費用" },
-    { name: "給料", type: "費用" },
-    { name: "支払家賃", type: "費用" },
-    { name: "消耗品費", type: "費用" },
-    { name: "通信費", type: "費用" },
-    { name: "支払利息", type: "費用" },
-  ];
-
+  // 状態
+  let allItems = [];   // 全データ {name, type}
+  let items = [];      // フィルタ後の出題候補
+  let types = [];      // type一覧
   let current = null;
   let answered = false;
+
   let count = 0;
   let correct = 0;
 
-  function pickRandom() {
+  function normalizeType(s){
+    return String(s ?? '').replace(/\s+/g,' ').trim();
+  }
+
+  async function loadCSV() {
+    const res = await fetch(CSV_PATH, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`accounts.csv が読めません（${CSV_PATH}）。同じ階層に置けているか確認してください。`);
+
+    const text = await res.text();
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (lines.length < 2) throw new Error('CSVにデータ行がありません（見出し＋1行以上必要）。');
+
+    const header = lines.shift().split(',').map(s => s.trim());
+    const idxAccount = header.indexOf('account');
+    const idxType = header.indexOf('type');
+    if (idxAccount === -1 || idxType === -1) {
+      throw new Error('CSVの1行目（見出し）は「account,type」にしてください。');
+    }
+
+    const parsed = [];
+    for (const line of lines) {
+      const cols = line.split(',').map(s => s.trim());
+      const name = cols[idxAccount];
+      const rawType = cols[idxType];
+      if (!name || !rawType) continue;
+      parsed.push({ name, type: normalizeType(rawType) });
+    }
+    if (!parsed.length) throw new Error('有効なデータが0件でした。');
+
+    allItems = parsed;
+
+    // type一覧
+    const set = new Set(parsed.map(x => x.type));
+    types = Array.from(set).sort((a,b) => a.localeCompare(b,'ja'));
+
+    document.getElementById('total').textContent = String(allItems.length);
+    document.getElementById('typeCount').textContent = String(types.length);
+
+    buildTypeFilter(types);
+    buildButtons(types);
+
+    document.getElementById('hint').textContent =
+      `読み込みOK：${allItems.length}件 / タイプ：${types.length}種。`;
+
+    applyFiltersAndReady();
+  }
+
+  function buildButtons(typeList){
+    const wrap = document.getElementById('buttons');
+    wrap.innerHTML = '';
+
+    typeList.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'typeBtn';
+      btn.textContent = t;
+      btn.onclick = () => answer(t);
+      wrap.appendChild(btn);
+    });
+  }
+
+  function buildTypeFilter(typeList){
+    const sel = document.getElementById('typeFilter');
+    const cur = sel.value;
+
+    sel.innerHTML = '';
+    const optAll = document.createElement('option');
+    optAll.value = '__ALL__';
+    optAll.textContent = 'すべて';
+    sel.appendChild(optAll);
+
+    typeList.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      sel.appendChild(opt);
+    });
+
+    if (typeList.includes(cur)) sel.value = cur;
+    else sel.value = '__ALL__';
+
+    sel.onchange = () => applyFiltersAndReady();
+    document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
+  }
+
+  function applyFiltersAndReady(){
+    const includeOther = document.getElementById('toggleOther').checked;
+    const filterType = document.getElementById('typeFilter').value;
+
+    items = allItems.filter(x => {
+      if (!includeOther && x.type === 'その他') return false;
+      if (filterType !== '__ALL__' && x.type !== filterType) return false;
+      return true;
+    });
+
+    if (!items.length){
+      document.getElementById('account').textContent = '出題できるデータが0件';
+      document.getElementById('result').innerHTML = `<span class="warn">条件を見直してください（「その他」除外＋絞り込み等）。</span>`;
+      return;
+    }
+    next();
+  }
+
+  function pickRandom(){
     return items[Math.floor(Math.random() * items.length)];
   }
 
-  function renderScore() {
+  function renderScore(){
     document.getElementById("count").textContent = count;
     document.getElementById("correct").textContent = correct;
     const rate = count === 0 ? 0 : Math.round((correct / count) * 100);
     document.getElementById("rate").textContent = rate;
   }
 
-  function show(item) {
+  function show(item){
     current = item;
     answered = false;
-    document.getElementById("account").textContent = item.name;
+    document.getElementById("account").textContent = item ? item.name : "—";
     document.getElementById("result").textContent = "";
   }
 
-  function answer(type) {
+  function answer(type){
     if (!current || answered) return;
     answered = true;
     count++;
@@ -113,19 +278,50 @@
     renderScore();
   }
 
-  function next() {
+  function next(){
+    if (!items.length) return;
     show(pickRandom());
   }
 
-  function resetScore() {
+  function resetScore(){
     count = 0;
     correct = 0;
     renderScore();
     next();
   }
 
-  // 初期表示
-  resetScore();
+  async function reload(){
+    document.getElementById("account").textContent = "読み込み中…";
+    document.getElementById("result").textContent = "";
+    document.getElementById("hint").textContent = "";
+    document.getElementById("buttons").innerHTML = "";
+    document.getElementById("typeFilter").innerHTML = `<option value="__ALL__">すべて</option>`;
+    document.getElementById('total').textContent = "0";
+    document.getElementById('typeCount').textContent = "0";
+
+    allItems = [];
+    items = [];
+    types = [];
+    current = null;
+    answered = false;
+
+    count = 0;
+    correct = 0;
+    renderScore();
+
+    try{
+      await loadCSV();
+    } catch(e){
+      document.getElementById("account").textContent = "CSV読み込みエラー";
+      document.getElementById("result").innerHTML =
+        `<span class="warn">エラー：</span>${String(e.message).replace(/\n/g,'<br>')}`;
+    }
+  }
+
+  (async function init(){
+    await reload();
+  })();
 </script>
 </body>
 </html>
+
