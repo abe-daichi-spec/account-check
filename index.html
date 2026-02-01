@@ -13,7 +13,6 @@
       --ng:#c33;
       --warn:#b60;
       --radius:14px;
-
       /* 色分け */
       --asset-bg: #eef6ff;   --asset-bd:#b7d7ff;
       --liab-bg:  #fff2f2;   --liab-bd:#ffc2c2;
@@ -29,30 +28,21 @@
     .big { font-size: 30px; font-weight: 800; margin: 10px 0 14px; line-height:1.2; }
     .ok { color: var(--ok); font-weight: 900; }
     .ng { color: var(--ng); font-weight: 900; }
-    .warn { color: var(--warn); font-weight: 900; }
-    .small { font-size: 12px; color: var(--text-muted); }
-
+    
     .toolbar { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin: 12px 0 8px; }
     label { user-select:none; cursor: pointer; }
     select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border2); background: #fff; }
     input[type="checkbox"] { transform: scale(1.15); margin-right: 4px; }
-
     button { border-radius: 14px; border: 1px solid var(--border2); background: #fff; cursor: pointer; transition: all 0.2s; }
     button:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    button:active { transform: translateY(1px); box-shadow: none; }
-    .actionBtn { padding: 10px 16px; font-weight: 700; white-space: nowrap; color: #444; }
+    .actionBtn { padding: 10px 16px; font-weight: 700; color: #444; }
 
     .grid { display: grid; gap: 10px; margin-top: 16px; }
     @media (max-width: 520px){ .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (min-width: 521px) and (max-width: 860px){ .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (min-width: 861px){ .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
     
-    .typeBtn{
-      padding: 16px 10px; min-height: 60px;
-      font-size: 16px; font-weight: 800; line-height: 1.2; text-align: center;
-    }
-
-    /* ボタン色（大分類） */
+    .typeBtn{ padding: 16px 10px; min-height: 60px; font-size: 16px; font-weight: 800; line-height: 1.2; }
     .btn-asset { background: var(--asset-bg); border-color: var(--asset-bd); color: #004488; }
     .btn-liab  { background: var(--liab-bg);  border-color: var(--liab-bd);  color: #880000; }
     .btn-equity{ background: var(--equity-bg);border-color: var(--equity-bd);color: #330088; }
@@ -70,27 +60,37 @@
     .tag.rev   { background: var(--rev-bg);   border-color: var(--rev-bd); }
     .tag.other { background: var(--other-bg); border-color: var(--other-bd); }
 
-    /* 正解/不正解表示 */
-    #result { font-size: 20px; font-weight: 700; margin-top: 16px; min-height: 1.5em; }
-    #result .ok, #result .ng { font-size: 24px; margin-right: 8px; }
-
-    /* 20問終了画面 */
     #stageClear { display:none; text-align:center; padding: 24px 0; }
-    #stageClear .title { font-size: 32px; font-weight: 800; margin: 16px 0; color: #333; }
-    #stageClear .sub { font-size: 16px; margin: 8px 0 20px; color: #555; }
     #stageClear .btn { font-size: 18px; padding: 14px 32px; border-radius: 16px; font-weight: 900; background: #333; color: #fff; border:none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    #stageClear .btn:hover { background: #555; transform: translateY(-2px); }
-    #stageClear .stats { margin-top: 16px; font-size: 14px; color: var(--text-muted); }
 
-    /* ★ ステータスバーのデザイン（RPG要素） */
+    /* ★ 対策3：動く背景（グラデーションアニメーション） */
+    /* 画像加工防止のため、背景を常に動かします */
     .status-bar { 
       display: flex; align-items: center; gap: 16px; 
-      margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px dashed var(--border);
+      margin-bottom: 20px; padding: 16px; border-radius: 12px;
+      border: 2px solid #333;
+      background: linear-gradient(270deg, #ffe6e6, #e6f0ff, #e6ffe6, #fffde6);
+      background-size: 800% 800%;
+      animation: bgAnimation 15s ease infinite;
     }
+    @keyframes bgAnimation { 
+      0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} 
+    }
+
     .char-icon { font-size: 48px; line-height: 1; animation: bounce 2s infinite; cursor: default; }
     .char-info { flex: 1; }
     .char-name { font-weight: 800; font-size: 18px; color: #333; margin-bottom: 4px; }
-    .char-next { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .char-next { font-size: 12px; color: #444; font-weight: 600; }
+    
+    /* 名前入力欄のスタイル */
+    #playerName {
+      font-size:16px; padding:6px; margin-bottom:6px; width:90%;
+      border:2px solid #ccc; border-radius:6px; font-weight:bold;
+    }
+    /* 名前確定後は少し薄くしてロック感を出す */
+    #playerName:read-only {
+      background-color: #eee; color: #555; border-color: #ddd;
+    }
     
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
@@ -101,8 +101,8 @@
 
 <body>
   <div style="margin-bottom:10px;">
-    <h2 style="margin:0;">勘定科目 分類トレーニング</h2>
-    <span class="small">Enterキーで「次へ」 / 正解すると自動で進みます</span>
+    <h2 style="margin:0;">勘定科目 分類トレーニング RPG</h2>
+    <span class="small">名前を入力してスタートしてください</span>
   </div>
 
   <div class="card">
@@ -110,6 +110,7 @@
     <div class="status-bar">
       <div class="char-icon" id="charIcon">🥚</div>
       <div class="char-info">
+        <input type="text" id="playerName" placeholder="名前を入力(必須)" onblur="lockNameTry()">
         <div class="char-name" id="charName">読み込み中...</div>
         <div class="char-next" id="charNext"></div>
       </div>
@@ -126,55 +127,42 @@
 
     <div id="stageClear">
       <div class="title">🎉 20問終了！</div>
-      <div id="lapMsg" class="sub"></div>
+      <div id="lapMsg" style="margin:10px 0;"></div>
       <button class="btn" onclick="startNextLap()">次の20問へ ▶</button>
-      <div class="stats">
+      <div style="margin-top:16px; color:#666;">
         今回の成績：正解 <span id="scCorrect">0</span> / <span id="scCount">0</span> 問
       </div>
     </div>
 
     <div class="toolbar">
-      <label class="small">
-        <input id="toggleOther" type="checkbox" checked>
-        その他も含める
-      </label>
-
+      <label class="small"><input id="toggleOther" type="checkbox" checked> その他も含める</label>
       <label class="small">
         <select id="typeFilter">
           <option value="__ALL__">すべて</option>
         </select>
       </label>
-
       <div style="flex:1;"></div>
-      <button class="actionBtn" onclick="next()" title="Enterキーでも進めます">スキップ / 次へ</button>
-      <button class="actionBtn" onclick="resetScore()" style="color:#c33;">リセット</button>
+      <button class="actionBtn" onclick="next()">スキップ</button>
+      <button class="actionBtn" onclick="resetAllData()" style="color:#c33;">名前変更/リセット</button>
     </div>
 
     <div class="legend">
-      <span class="tag asset">資産</span>
-      <span class="tag liab">負債</span>
-      <span class="tag equity">純資産</span>
-      <span class="tag exp">費用</span>
-      <span class="tag rev">収益</span>
-      <span class="tag other">その他</span>
+      <span class="tag asset">資産</span><span class="tag liab">負債</span><span class="tag equity">純資産</span>
+      <span class="tag exp">費用</span><span class="tag rev">収益</span><span class="tag other">その他</span>
     </div>
 
     <div id="buttons" class="grid"></div>
-
-    <p id="result" class="muted"></p>
+    <p id="result" style="margin-top:16px; font-weight:700; min-height:1.5em;"></p>
 
     <div class="summary muted">
       <span>今回：<span id="correct">0</span> / <span id="count">0</span> 問正解</span>
-      <span class="small" style="margin-left:auto;">
-        (残り: <span id="remain">0</span> | 周回: <span id="lap">0</span>)
-      </span>
+      <span class="small" style="margin-left:auto;">(残り: <span id="remain">0</span> | 周回: <span id="lap">0</span>)</span>
     </div>
   </div>
 
 <script>
-  // ★ データをここに埋め込みました（ファイル読み込み不要で動きます）
-  const RAW_CSV_DATA = `
-account,type
+  // ★ データを内部に埋め込み
+  const RAW_CSV_DATA = `account,type
 現金,流動資産
 小口現金,流動資産
 当座預金,流動資産
@@ -265,12 +253,11 @@ account,type
 雑益,営業外収益
 固定資産売却益,特別利益
 償却債権取立益,特別利益
-損益,その他
-`;
+損益,その他`;
 
   const MAX_QUESTIONS = 20;
 
-  // ★ キャラクターレベル設定 (RPG要素)
+  // キャラクター設定 (RPG要素)
   const CHARACTERS = [
     { score: 0,    icon: '🥚', name: 'Lv.1 簿記のたまご' },
     { score: 20,   icon: '🐣', name: 'Lv.2 新人ピヨピヨ' },
@@ -284,15 +271,16 @@ account,type
     { score: 1000, icon: '🧚', name: 'Lv.10 簿記マスター' },
   ];
 
-  // 累計正解数
+  // グローバル変数
   let totalCorrectAccumulated = 0;
+  let currentCharacter = CHARACTERS[0]; // 現在のキャラ状態を保持
+  let playerName = ""; // 名前
 
   const TYPE_ORDER = [
     '流動資産','固定資産','流動負債','固定負債','純資産',
     '営業費用','販売費および一般管理費','営業外費用','特別損失',
     '営業収益','営業外収益','特別利益','その他'
   ];
-
   const TYPE_TO_GROUP = new Map([
     ['流動資産','asset'], ['固定資産','asset'],
     ['流動負債','liab'],  ['固定負債','liab'],
@@ -305,32 +293,48 @@ account,type
     asset: 'btn-asset', liab: 'btn-liab', equity:'btn-equity',
     exp: 'btn-exp', rev: 'btn-rev', other:'btn-other',
   };
-
   const BS_TYPES = new Set(['流動資産','固定資産','流動負債','固定負債','純資産']);
   const PL_TYPES = new Set(['営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益']);
 
-  // ゲーム状態
-  let allItems = [];
-  let items = [];
-  let types = [];
-  let current = null;
-  let answered = false;
-  let count = 0;
-  let correct = 0;
-  let deck = [];
-  let deckIndex = 0;
-  let lap = 0;
+  let allItems = [], items = [], types = [], current = null, answered = false;
+  let count = 0, correct = 0, deck = [], deckIndex = 0, lap = 0;
 
-  // --- ローカルストレージ保存 ---
+  // --- ★ 対策1：名前ロックとリセット機能 ---
+  function lockNameTry() {
+    const input = document.getElementById('playerName');
+    const val = input.value.trim();
+    if(val) {
+      // 名前が入ったら保存してロック
+      playerName = val;
+      localStorage.setItem('bokiApp_playerName', playerName);
+      input.readOnly = true; 
+    }
+  }
+
+  function resetAllData() {
+    if(!confirm("【注意】\n名前を変更するには、データをリセットする必要があります。\nこれまでのレベルと正解数は「すべて消去」され、Lv.1に戻ります。\n\n本当によろしいですか？")) return;
+    
+    // 全データ消去
+    localStorage.removeItem('bokiApp_totalCorrect');
+    localStorage.removeItem('bokiApp_playerName');
+    location.reload(); // リロードして初期化
+  }
+
+  function loadProgress() {
+    const savedScore = localStorage.getItem('bokiApp_totalCorrect');
+    if (savedScore) totalCorrectAccumulated = parseInt(savedScore, 10);
+    
+    const savedName = localStorage.getItem('bokiApp_playerName');
+    if (savedName) {
+      playerName = savedName;
+      const input = document.getElementById('playerName');
+      input.value = playerName;
+      input.readOnly = true; // 読み込み時もロック
+    }
+  }
   function saveProgress() {
     localStorage.setItem('bokiApp_totalCorrect', totalCorrectAccumulated);
   }
-  function loadProgress() {
-    const saved = localStorage.getItem('bokiApp_totalCorrect');
-    if (saved) totalCorrectAccumulated = parseInt(saved, 10);
-    document.getElementById('totalAccumulated').textContent = totalCorrectAccumulated;
-  }
-  // -----------------------------
 
   // --- キャラクター表示更新 ---
   function updateCharacterUI() {
@@ -344,7 +348,11 @@ account,type
         else nextChara = null;
       }
     }
+    
+    // 現在の状態をグローバル変数に保存（改ざん検知用）
+    currentCharacter = currentChara;
 
+    // UI反映
     document.getElementById('charIcon').textContent = currentChara.icon;
     document.getElementById('charName').textContent = currentChara.name;
     document.getElementById('totalAccumulated').textContent = totalCorrectAccumulated;
@@ -353,23 +361,52 @@ account,type
     if (nextChara) {
       const remain = nextChara.score - totalCorrectAccumulated;
       nextEl.textContent = `あと正解 ${remain} 回で進化`;
-      nextEl.style.color = 'var(--text-muted)';
+      nextEl.style.color = '#444';
     } else {
       nextEl.textContent = `最高ランク到達！`;
       nextEl.style.color = 'var(--ok)';
     }
   }
+
+  // --- ★ 対策2：UI常時監視システム（アンチチート） ---
+  // 1秒ごとに「画面の表示」が「正しいデータ」と合っているか監視し、違えば強制修正する
+  setInterval(() => {
+    // 1. レベル表記の改ざん監視
+    const domName = document.getElementById('charName').textContent;
+    if(domName !== currentCharacter.name) {
+      console.warn("改ざん検知: 名前を修正しました");
+      document.getElementById('charName').textContent = currentCharacter.name;
+    }
+
+    // 2. アイコンの改ざん監視
+    const domIcon = document.getElementById('charIcon').textContent;
+    if(domIcon !== currentCharacter.icon) {
+      document.getElementById('charIcon').textContent = currentCharacter.icon;
+    }
+
+    // 3. 正解数の改ざん監視
+    const domScore = document.getElementById('totalAccumulated').textContent;
+    if(domScore != totalCorrectAccumulated) {
+       document.getElementById('totalAccumulated').textContent = totalCorrectAccumulated;
+    }
+    
+    // 4. 名前ロックの監視（HTMLでreadonlyを外しても戻す）
+    const input = document.getElementById('playerName');
+    if(playerName && !input.readOnly) {
+       input.readOnly = true;
+       input.value = playerName;
+    }
+  }, 500); // 0.5秒間隔でパトロール
   // -----------------------------
 
-  function normalizeType(s){ return String(s ?? '').replace(/\s+/g,' ').trim(); }
 
+  function normalizeType(s){ return String(s ?? '').replace(/\s+/g,' ').trim(); }
   function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [array[i], array[j]] = [array[j], array[i]];
     }
   }
-
   function sortTypesWithOrder(typeList){
     const orderIndex = new Map(TYPE_ORDER.map((t,i)=>[t,i]));
     return [...typeList].sort((a,b)=>{
@@ -380,27 +417,19 @@ account,type
     });
   }
 
-  function updateRemain(){
-    const remain = Math.max(0, deck.length - deckIndex);
-    document.getElementById('remain').textContent = String(remain);
-  }
-
   function showQuizUI(){
     document.getElementById("stageClear").style.display = "none";
     document.getElementById("quizArea").style.display = "block";
     document.getElementById("buttons").style.display = "grid";
   }
-
   function showClearUI(){
     document.getElementById("quizArea").style.display = "none";
     document.getElementById("buttons").style.display = "none";
     document.getElementById("stageClear").style.display = "block";
-
     document.getElementById("scCorrect").textContent = String(correct);
     document.getElementById("scCount").textContent = String(count);
-    document.getElementById("lapMsg").textContent = `${lap}周目クリア！お疲れ様！`;
+    document.getElementById("lapMsg").textContent = `${lap}周目クリア！`;
   }
-
   function prepareDeck(){
     deck = [...items];
     shuffle(deck);
@@ -409,84 +438,63 @@ account,type
     document.getElementById('lap').textContent = String(lap);
     updateRemain();
   }
-
   function startNextLap(){
     showQuizUI();
     document.getElementById("result").textContent = "";
     prepareDeck();
     next();
   }
-
+  function updateRemain(){
+    document.getElementById('remain').textContent = String(Math.max(0, deck.length - deckIndex));
+  }
   function renderScore(){
     document.getElementById("count").textContent = count;
     document.getElementById("correct").textContent = correct;
   }
-
   function show(item){
     current = item;
     answered = false;
     document.getElementById("account").textContent = item ? item.name : "—";
     document.getElementById("result").textContent = "";
   }
-
   function answer(type){
     if (!current || answered) return;
+    
+    // 名前が空なら警告して進ませない
+    if(!playerName) {
+      alert("先に上の欄に「名前」を入力してください！");
+      document.getElementById('playerName').focus();
+      return;
+    }
+
     answered = true;
     count++;
-
     const ok = (type === current.type);
     if (ok) {
       correct++;
-      // ★ 正解時の処理：経験値加算
       totalCorrectAccumulated++;
       saveProgress();
       updateCharacterUI();
     }
-
-    document.getElementById("result").innerHTML =
-      ok
+    document.getElementById("result").innerHTML = ok
         ? `<span class="ok">⭕ 正解！</span><span class="muted small">${current.name} は ${current.type} です</span>`
         : `<span class="ng">❌ 不正解...</span><span class="muted small">正解は「${current.type}」でした</span>`;
-
     renderScore();
 
-    // ★ UX向上：正解なら自動で次へ
     if (ok) {
       setTimeout(() => {
-        // まだ問題が残っていて、ステージクリア画面じゃない場合のみ
-        if (deckIndex < deck.length) {
-          next();
-        } else {
-          // 最後の問題だった場合はすぐに次へ（クリア画面表示のため）
-          next();
-        }
-      }, 600); // 0.6秒後に遷移
+        if (deckIndex < deck.length) next();
+        else next(); 
+      }, 600);
     }
   }
-
   function next(){
     if (!deck.length) return;
-
-    // 全問終了チェック
-    if (deckIndex >= deck.length) {
-      showClearUI();
-      return;
-    }
-
+    if (deckIndex >= deck.length) { showClearUI(); return; }
     show(deck[deckIndex]);
     deckIndex++;
     updateRemain();
   }
-
-  function resetScore(){
-    if(!confirm("現在の周回のスコアをリセットしますか？（累計レベルは維持されます）")) return;
-    count = 0;
-    correct = 0;
-    renderScore();
-    lap = 0;
-    applyFiltersAndReady();
-  }
-
   function buildButtons(typeList){
     const wrap = document.getElementById('buttons');
     wrap.innerHTML = '';
@@ -500,12 +508,10 @@ account,type
       wrap.appendChild(btn);
     });
   }
-
   function buildTypeFilter(typeList){
     const sel = document.getElementById('typeFilter');
     const cur = sel.value;
     sel.innerHTML = '';
-
     const topOptions = [
       { label: 'すべて', value: '__ALL__' },
       { label: '貸借対照表（BS）のみ', value: '__BS__' },
@@ -518,24 +524,16 @@ account,type
       opt.value = o.value;
       sel.appendChild(opt);
     }
-
     const sep = document.createElement('option');
-    sep.textContent = '────────';
-    sep.disabled = true;
-    sel.appendChild(sep);
-
+    sep.textContent = '────────'; sep.disabled = true; sel.appendChild(sep);
     for (const t of typeList) {
       const opt = document.createElement('option');
-      opt.textContent = t;
-      opt.value = t;
-      sel.appendChild(opt);
+      opt.textContent = t; opt.value = t; sel.appendChild(opt);
     }
     sel.value = '__ALL__';
-    
     sel.onchange = () => applyFiltersAndReady();
     document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
   }
-
   function allowByFilter(xType, filterType){
     if (filterType === '__ALL__') return true;
     if (filterType === '__BS__') return BS_TYPES.has(xType);
@@ -543,45 +541,35 @@ account,type
     if (filterType === '__OTHER__') return xType === 'その他';
     return xType === filterType;
   }
-
   function applyFiltersAndReady(){
     showQuizUI();
     const includeOther = document.getElementById('toggleOther').checked;
     const filterType = document.getElementById('typeFilter').value;
-
     let filtered = allItems.filter(x => {
       if (!includeOther && x.type === 'その他') return false;
       if (!allowByFilter(x.type, filterType)) return false;
       return true;
     });
-
     if (!filtered.length){
       document.getElementById('account').textContent = '該当データなし';
       document.getElementById('buttons').innerHTML = '';
       return;
     }
-
     if (filtered.length > MAX_QUESTIONS) {
       shuffle(filtered);
       items = filtered.slice(0, MAX_QUESTIONS);
-    } else {
-      items = filtered;
-    }
-
+    } else { items = filtered; }
     lap = 0; 
     document.getElementById('lap').textContent = "0";
     prepareDeck();
     next();
   }
-
-  // 文字列データから読み込む（fetch不要）
   function loadDataFromString() {
     try {
       const lines = RAW_CSV_DATA.split(/\r?\n/).filter(l => l.trim().length > 0);
       const header = lines.shift().split(',').map(s => s.trim());
       const idxAccount = header.indexOf('account');
       const idxType = header.indexOf('type');
-
       const parsed = [];
       for (const line of lines) {
         const cols = line.split(',').map(s => s.trim());
@@ -594,34 +582,25 @@ account,type
       allItems = parsed;
       const set = new Set(parsed.map(x => x.type));
       types = sortTypesWithOrder(Array.from(set));
-
       buildTypeFilter(types);
       buildButtons(types);
       applyFiltersAndReady();
-    } catch(e) {
-      alert("データ読み込みエラー: " + e);
-    }
+    } catch(e) { alert("データ読み込みエラー: " + e); }
   }
 
-  // ★ キーボード操作 (Enter/Space)
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
-      // ステージクリア画面なら「次へ」
       if (document.getElementById('stageClear').style.display === 'block') {
-        startNextLap();
-        e.preventDefault();
-        return;
+        startNextLap(); e.preventDefault(); return;
       }
-      // 通常時もスキップ/次へ
-      next();
-      e.preventDefault();
+      next(); e.preventDefault();
     }
   });
 
   (function init(){
-    loadProgress();      // セーブデータ読み込み
-    updateCharacterUI(); // キャラ表示
-    loadDataFromString();// 問題データ読み込み
+    loadProgress();
+    loadDataFromString();
+    updateCharacterUI();
   })();
 </script>
 </body>
