@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>勘定科目 分類トレーニング</title>
+  <title>勘定科目 分類トレーニング RPG</title>
   <style>
     :root{
       --border:#ddd;
@@ -23,56 +23,46 @@
       --other-bg: #f5f5f5;   --other-bd:#d9d9d9;
     }
 
-    body { font-family: sans-serif; max-width: 920px; margin: 24px auto; padding: 0 12px; }
-    .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    body { font-family: sans-serif; max-width: 920px; margin: 24px auto; padding: 0 12px; background-color: #f9f9f9; }
+    .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     .muted { color: var(--text-muted); font-size: 14px; }
     .big { font-size: 30px; font-weight: 800; margin: 10px 0 14px; line-height:1.2; }
     .ok { color: var(--ok); font-weight: 900; }
     .ng { color: var(--ng); font-weight: 900; }
     .warn { color: var(--warn); font-weight: 900; }
     .small { font-size: 12px; color: var(--text-muted); }
-    .pill { display:inline-block; padding:4px 10px; border:1px solid var(--border); border-radius:999px; font-size:12px; color:#444; }
 
     .toolbar { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin: 12px 0 8px; }
-    label { user-select:none; }
-    select { padding: 10px 10px; border-radius: 12px; border: 1px solid var(--border2); }
-    input[type="checkbox"] { transform: scale(1.15); }
+    label { user-select:none; cursor: pointer; }
+    select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border2); background: #fff; }
+    input[type="checkbox"] { transform: scale(1.15); margin-right: 4px; }
 
-    button { border-radius: 14px; border: 1px solid var(--border2); background: #fff; cursor: pointer; }
-    button:hover { opacity: .92; }
-    button:active { transform: translateY(1px); }
-    .actionBtn { padding: 10px 12px; font-weight: 800; white-space: nowrap; }
+    button { border-radius: 14px; border: 1px solid var(--border2); background: #fff; cursor: pointer; transition: all 0.2s; }
+    button:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    button:active { transform: translateY(1px); box-shadow: none; }
+    .actionBtn { padding: 10px 16px; font-weight: 700; white-space: nowrap; color: #444; }
 
-    .grid { display: grid; gap: 10px; margin-top: 12px; }
-    @media (max-width: 520px){
-      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (min-width: 521px) and (max-width: 860px){
-      .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    }
-    @media (min-width: 861px){
-      .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    }
+    .grid { display: grid; gap: 10px; margin-top: 16px; }
+    @media (max-width: 520px){ .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (min-width: 521px) and (max-width: 860px){ .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (min-width: 861px){ .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    
     .typeBtn{
-      padding: 16px 10px;
-      min-height: 56px;
-      font-size: 16px;
-      font-weight: 800;
-      line-height: 1.1;
-      text-align: center;
+      padding: 16px 10px; min-height: 60px;
+      font-size: 16px; font-weight: 800; line-height: 1.2; text-align: center;
     }
 
     /* ボタン色（大分類） */
-    .btn-asset { background: var(--asset-bg); border-color: var(--asset-bd); }
-    .btn-liab  { background: var(--liab-bg);  border-color: var(--liab-bd);  }
-    .btn-equity{ background: var(--equity-bg);border-color: var(--equity-bd);}
-    .btn-exp   { background: var(--exp-bg);   border-color: var(--exp-bd);   }
-    .btn-rev   { background: var(--rev-bg);   border-color: var(--rev-bd);   }
-    .btn-other { background: var(--other-bg); border-color: var(--other-bd); }
+    .btn-asset { background: var(--asset-bg); border-color: var(--asset-bd); color: #004488; }
+    .btn-liab  { background: var(--liab-bg);  border-color: var(--liab-bd);  color: #880000; }
+    .btn-equity{ background: var(--equity-bg);border-color: var(--equity-bd);color: #330088; }
+    .btn-exp   { background: var(--exp-bg);   border-color: var(--exp-bd);   color: #884400; }
+    .btn-rev   { background: var(--rev-bg);   border-color: var(--rev-bd);   color: #006622; }
+    .btn-other { background: var(--other-bg); border-color: var(--other-bd); color: #444; }
 
-    .summary { margin-top: 10px; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
-    .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top: 8px; }
-    .tag { font-size:12px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); }
+    .summary { margin-top: 20px; padding-top:10px; border-top: 1px solid #eee; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
+    .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top: 12px; }
+    .tag { font-size:11px; padding:3px 8px; border-radius:999px; border:1px solid var(--border); user-select: none; }
     .tag.asset { background: var(--asset-bg); border-color: var(--asset-bd); }
     .tag.liab  { background: var(--liab-bg);  border-color: var(--liab-bd); }
     .tag.equity{ background: var(--equity-bg);border-color: var(--equity-bd);}
@@ -80,37 +70,84 @@
     .tag.rev   { background: var(--rev-bg);   border-color: var(--rev-bd); }
     .tag.other { background: var(--other-bg); border-color: var(--other-bd); }
 
-    /* ★ 正解/不正解を大きく */
-    #result { font-size: 22px; font-weight: 800; margin-top: 10px; }
-    #result .ok, #result .ng { font-size: 30px; }
+    /* 正解/不正解表示 */
+    #result { font-size: 20px; font-weight: 700; margin-top: 16px; min-height: 1.5em; }
+    #result .ok, #result .ng { font-size: 24px; margin-right: 8px; }
+
+    /* 20問終了画面 */
+    #stageClear { display:none; text-align:center; padding: 24px 0; }
+    #stageClear .title { font-size: 32px; font-weight: 800; margin: 16px 0; color: #333; }
+    #stageClear .sub { font-size: 16px; margin: 8px 0 20px; color: #555; }
+    #stageClear .btn { font-size: 18px; padding: 14px 32px; border-radius: 16px; font-weight: 900; background: #333; color: #fff; border:none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    #stageClear .btn:hover { background: #555; transform: translateY(-2px); }
+    #stageClear .stats { margin-top: 16px; font-size: 14px; color: var(--text-muted); }
+
+    /* ★ ステータスバーのデザイン（RPG要素） */
+    .status-bar { 
+      display: flex; align-items: center; gap: 16px; 
+      margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px dashed var(--border);
+    }
+    .char-icon { font-size: 48px; line-height: 1; animation: bounce 2s infinite; cursor: default; }
+    .char-info { flex: 1; }
+    .char-name { font-weight: 800; font-size: 18px; color: #333; margin-bottom: 4px; }
+    .char-next { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
   </style>
 </head>
 
 <body>
-  <h2>勘定科目 分類トレーニング</h2>
-  <b>出題に使う勘定科目は最大20個</b>
-  </p>
+  <div style="margin-bottom:10px;">
+    <h2 style="margin:0;">勘定科目 分類トレーニング</h2>
+    <span class="small">Enterキーで「次へ」 / 正解すると自動で進みます</span>
+  </div>
 
   <div class="card">
-    <div class="muted">次の勘定科目の「タイプ」は？</div>
-    <div id="account" class="big">読み込み中…</div>
+    
+    <div class="status-bar">
+      <div class="char-icon" id="charIcon">🥚</div>
+      <div class="char-info">
+        <div class="char-name" id="charName">読み込み中...</div>
+        <div class="char-next" id="charNext"></div>
+      </div>
+      <div style="text-align:right;">
+        <div class="small">累計正解</div>
+        <div style="font-weight:800; font-size:18px;"><span id="totalAccumulated">0</span>問</div>
+      </div>
+    </div>
+
+    <div id="quizArea">
+      <div class="muted">次の勘定科目の「タイプ」は？</div>
+      <div id="account" class="big">スタート！</div>
+    </div>
+
+    <div id="stageClear">
+      <div class="title">🎉 20問終了！</div>
+      <div id="lapMsg" class="sub"></div>
+      <button class="btn" onclick="startNextLap()">次の20問へ ▶</button>
+      <div class="stats">
+        今回の成績：正解 <span id="scCorrect">0</span> / <span id="scCount">0</span> 問
+      </div>
+    </div>
 
     <div class="toolbar">
       <label class="small">
         <input id="toggleOther" type="checkbox" checked>
-        「その他」も出題に含める
+        その他も含める
       </label>
 
       <label class="small">
-        出題絞り込み：
         <select id="typeFilter">
           <option value="__ALL__">すべて</option>
         </select>
       </label>
 
-      <button class="actionBtn" onclick="next()">次へ</button>
-      <button class="actionBtn" onclick="resetScore()">リセット</button>
-      <button class="actionBtn" onclick="reload()">CSV再読み込み</button>
+      <div style="flex:1;"></div>
+      <button class="actionBtn" onclick="next()" title="Enterキーでも進めます">スキップ / 次へ</button>
+      <button class="actionBtn" onclick="resetScore()" style="color:#c33;">リセット</button>
     </div>
 
     <div class="legend">
@@ -127,103 +164,210 @@
     <p id="result" class="muted"></p>
 
     <div class="summary muted">
-      <span>回答数：<span id="count">0</span></span>
-      <span>正解数：<span id="correct">0</span></span>
-      <span>正答率：<span id="rate">0</span>%</span>
-      <span class="small">
-        （全データ：<span id="total">0</span> /
-        出題に使用：<span id="used">0</span> /
-        タイプ数：<span id="typeCount">0</span> /
-        周回：<span id="lap">0</span> /
-        残り：<span id="remain">0</span>）
+      <span>今回：<span id="correct">0</span> / <span id="count">0</span> 問正解</span>
+      <span class="small" style="margin-left:auto;">
+        (残り: <span id="remain">0</span> | 周回: <span id="lap">0</span>)
       </span>
     </div>
-
-    <p id="hint" class="small"></p>
   </div>
 
 <script>
-  const CSV_PATH = './accounts.csv';
-  const MAX_QUESTIONS = 20; // ★出題に使う勘定科目の上限
+  // ★ データをここに埋め込みました（ファイル読み込み不要で動きます）
+  const RAW_CSV_DATA = `
+account,type
+現金,流動資産
+小口現金,流動資産
+当座預金,流動資産
+受取手形,流動資産
+売掛金,流動資産
+電子記録債権,流動資産
+クレジット売掛金,流動資産
+繰越商品,流動資産
+貸倒引当金,流動資産
+消耗品,流動資産
+仮払金,流動資産
+立替金,流動資産
+前払金,流動資産
+現金過不足,流動資産
+貯蔵品,流動資産
+建物,固定資産
+建物減価償却累計額,固定資産
+備品,固定資産
+備品減価償却累計額,固定資産
+車両運搬具,固定資産
+車両運搬具減価償却累計額,固定資産
+土地,固定資産
+のれん,固定資産
+特許権,固定資産
+商標権,固定資産
+ソフトウェア,固定資産
+投資有価証券,固定資産
+敷金,固定資産
+支払手形,流動負債
+買掛金,流動負債
+電子記録債務,流動負債
+前受金,流動負債
+未払金,流動負債
+仮受金,流動負債
+預り金,流動負債
+未払法人税等,流動負債
+未払配当金,流動負債
+当座借越,流動負債
+短期借入金,流動負債
+未払費用,流動負債
+前受収益,流動負債
+社債,固定負債
+長期借入金,固定負債
+退職給付引当金,固定負債
+資本金,純資産
+資本準備金,純資産
+その他資本剰余金,純資産
+利益準備金,純資産
+繰越利益剰余金,純資産
+自己株式,純資産
+仕入,営業費用
+給料,販売費および一般管理費
+給料手当,販売費および一般管理費
+法定福利費,販売費および一般管理費
+広告宣伝費,販売費および一般管理費
+発送費,販売費および一般管理費
+旅費交通費,販売費および一般管理費
+通信費,販売費および一般管理費
+水道光熱費,販売費および一般管理費
+消耗品費,販売費および一般管理費
+租税公課,販売費および一般管理費
+保険料,販売費および一般管理費
+修繕費,販売費および一般管理費
+賃借料,販売費および一般管理費
+支払家賃,販売費および一般管理費
+支払地代,販売費および一般管理費
+保管費,販売費および一般管理費
+貸倒引当金繰入,販売費および一般管理費
+貸倒損失,販売費および一般管理費
+減価償却費,販売費および一般管理費
+のれん償却,販売費および一般管理費
+支払利息,営業外費用
+手形売却損,営業外費用
+有価証券売却損,営業外費用
+有価証券評価損,営業外費用
+為替差損,営業外費用
+雑損,営業外費用
+固定資産売却損,特別損失
+固定資産除却損,特別損失
+火災損失,特別損失
+売上,営業収益
+受取利息,営業外収益
+受取配当金,営業外収益
+有価証券利息,営業外収益
+有価証券売却益,営業外収益
+有価証券評価益,営業外収益
+為替差益,営業外収益
+雑益,営業外収益
+固定資産売却益,特別利益
+償却債権取立益,特別利益
+損益,その他
+`;
 
-  // ====== ボタンの並び順 ======
-  const TYPE_ORDER = [
-    '流動資産',
-    '固定資産',
-    '流動負債',
-    '固定負債',
-    '純資産',
-    '営業費用',
-    '販売費および一般管理費',
-    '営業外費用',
-    '特別損失',
-    '営業収益',
-    '営業外収益',
-    '特別利益',
-    'その他'
+  const MAX_QUESTIONS = 20;
+
+  // ★ キャラクターレベル設定 (RPG要素)
+  const CHARACTERS = [
+    { score: 0,    icon: '🥚', name: 'Lv.1 簿記のたまご' },
+    { score: 20,   icon: '🐣', name: 'Lv.2 新人ピヨピヨ' },
+    { score: 50,   icon: '🐥', name: 'Lv.3 かけだし経理' },
+    { score: 100,  icon: '🐢', name: 'Lv.4 コツコツ亀さん' },
+    { score: 180,  icon: '🐇', name: 'Lv.5 疾風の仕訳人' },
+    { score: 280,  icon: '🦉', name: 'Lv.6 賢者の知恵' },
+    { score: 400,  icon: '🐆', name: 'Lv.7 決算の狩人' },
+    { score: 550,  icon: '🦁', name: 'Lv.8 財務の王' },
+    { score: 750,  icon: '🐲', name: 'Lv.9 伝説の会計龍' },
+    { score: 1000, icon: '🧚', name: 'Lv.10 簿記マスター' },
   ];
 
-  // ====== 色分け用：type → 大分類（判定は変換しない。色だけ） ======
+  // 累計正解数
+  let totalCorrectAccumulated = 0;
+
+  const TYPE_ORDER = [
+    '流動資産','固定資産','流動負債','固定負債','純資産',
+    '営業費用','販売費および一般管理費','営業外費用','特別損失',
+    '営業収益','営業外収益','特別利益','その他'
+  ];
+
   const TYPE_TO_GROUP = new Map([
-    // BS
     ['流動資産','asset'], ['固定資産','asset'],
     ['流動負債','liab'],  ['固定負債','liab'],
     ['純資産','equity'],
-    // PL
     ['営業費用','exp'], ['販売費および一般管理費','exp'], ['営業外費用','exp'], ['特別損失','exp'],
     ['営業収益','rev'], ['営業外収益','rev'], ['特別利益','rev'],
-    // その他
     ['その他','other'],
   ]);
-
   const GROUP_TO_BTNCLASS = {
     asset: 'btn-asset', liab: 'btn-liab', equity:'btn-equity',
     exp: 'btn-exp', rev: 'btn-rev', other:'btn-other',
   };
 
-  // ====== BS/PLの定義（絞り込み用） ======
   const BS_TYPES = new Set(['流動資産','固定資産','流動負債','固定負債','純資産']);
   const PL_TYPES = new Set(['営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益']);
 
-  // 状態
-  let allItems = [];   // 全データ {name, type}
-  let items = [];      // フィルタ後
-  let types = [];      // type一覧（ボタン用）
+  // ゲーム状態
+  let allItems = [];
+  let items = [];
+  let types = [];
   let current = null;
   let answered = false;
-
   let count = 0;
   let correct = 0;
-
-  // 山札（全問シャッフル→順に出す）
   let deck = [];
   let deckIndex = 0;
   let lap = 0;
 
-  function normalizeType(s){
-    return String(s ?? '').replace(/\s+/g,' ').trim();
+  // --- ローカルストレージ保存 ---
+  function saveProgress() {
+    localStorage.setItem('bokiApp_totalCorrect', totalCorrectAccumulated);
   }
+  function loadProgress() {
+    const saved = localStorage.getItem('bokiApp_totalCorrect');
+    if (saved) totalCorrectAccumulated = parseInt(saved, 10);
+    document.getElementById('totalAccumulated').textContent = totalCorrectAccumulated;
+  }
+  // -----------------------------
+
+  // --- キャラクター表示更新 ---
+  function updateCharacterUI() {
+    let currentChara = CHARACTERS[0];
+    let nextChara = null;
+
+    for (let i = 0; i < CHARACTERS.length; i++) {
+      if (totalCorrectAccumulated >= CHARACTERS[i].score) {
+        currentChara = CHARACTERS[i];
+        if (i + 1 < CHARACTERS.length) nextChara = CHARACTERS[i + 1];
+        else nextChara = null;
+      }
+    }
+
+    document.getElementById('charIcon').textContent = currentChara.icon;
+    document.getElementById('charName').textContent = currentChara.name;
+    document.getElementById('totalAccumulated').textContent = totalCorrectAccumulated;
+
+    const nextEl = document.getElementById('charNext');
+    if (nextChara) {
+      const remain = nextChara.score - totalCorrectAccumulated;
+      nextEl.textContent = `あと正解 ${remain} 回で進化`;
+      nextEl.style.color = 'var(--text-muted)';
+    } else {
+      nextEl.textContent = `最高ランク到達！`;
+      nextEl.style.color = 'var(--ok)';
+    }
+  }
+  // -----------------------------
+
+  function normalizeType(s){ return String(s ?? '').replace(/\s+/g,' ').trim(); }
 
   function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [array[i], array[j]] = [array[j], array[i]];
     }
-  }
-
-  function prepareDeck(){
-    deck = [...items];
-    shuffle(deck);
-    deckIndex = 0;
-    lap += 1;
-    document.getElementById('lap').textContent = String(lap);
-    updateRemain();
-  }
-
-  function updateRemain(){
-    const remain = Math.max(0, deck.length - deckIndex);
-    document.getElementById('remain').textContent = String(remain);
-    document.getElementById('used').textContent = String(deck.length);
   }
 
   function sortTypesWithOrder(typeList){
@@ -236,96 +380,111 @@
     });
   }
 
-  async function loadCSV() {
-    const res = await fetch(CSV_PATH, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`accounts.csv が読めません（${CSV_PATH}）。同じ階層に置けているか確認してください。`);
+  function updateRemain(){
+    const remain = Math.max(0, deck.length - deckIndex);
+    document.getElementById('remain').textContent = String(remain);
+  }
 
-    const text = await res.text();
-    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-    if (lines.length < 2) throw new Error('CSVにデータ行がありません（見出し＋1行以上必要）。');
+  function showQuizUI(){
+    document.getElementById("stageClear").style.display = "none";
+    document.getElementById("quizArea").style.display = "block";
+    document.getElementById("buttons").style.display = "grid";
+  }
 
-    const header = lines.shift().split(',').map(s => s.trim());
-    const idxAccount = header.indexOf('account');
-    const idxType = header.indexOf('type');
-    if (idxAccount === -1 || idxType === -1) {
-      throw new Error('CSVの1行目（見出し）は「account,type」にしてください。');
+  function showClearUI(){
+    document.getElementById("quizArea").style.display = "none";
+    document.getElementById("buttons").style.display = "none";
+    document.getElementById("stageClear").style.display = "block";
+
+    document.getElementById("scCorrect").textContent = String(correct);
+    document.getElementById("scCount").textContent = String(count);
+    document.getElementById("lapMsg").textContent = `${lap}周目クリア！お疲れ様！`;
+  }
+
+  function prepareDeck(){
+    deck = [...items];
+    shuffle(deck);
+    deckIndex = 0;
+    lap += 1;
+    document.getElementById('lap').textContent = String(lap);
+    updateRemain();
+  }
+
+  function startNextLap(){
+    showQuizUI();
+    document.getElementById("result").textContent = "";
+    prepareDeck();
+    next();
+  }
+
+  function renderScore(){
+    document.getElementById("count").textContent = count;
+    document.getElementById("correct").textContent = correct;
+  }
+
+  function show(item){
+    current = item;
+    answered = false;
+    document.getElementById("account").textContent = item ? item.name : "—";
+    document.getElementById("result").textContent = "";
+  }
+
+  function answer(type){
+    if (!current || answered) return;
+    answered = true;
+    count++;
+
+    const ok = (type === current.type);
+    if (ok) {
+      correct++;
+      // ★ 正解時の処理：経験値加算
+      totalCorrectAccumulated++;
+      saveProgress();
+      updateCharacterUI();
     }
 
-    const parsed = [];
-    for (const line of lines) {
-      const cols = line.split(',').map(s => s.trim());
-      const name = cols[idxAccount];
-      const rawType = cols[idxType];
-      if (!name || !rawType) continue;
-      parsed.push({ name, type: normalizeType(rawType) });
+    document.getElementById("result").innerHTML =
+      ok
+        ? `<span class="ok">⭕ 正解！</span><span class="muted small">${current.name} は ${current.type} です</span>`
+        : `<span class="ng">❌ 不正解...</span><span class="muted small">正解は「${current.type}」でした</span>`;
+
+    renderScore();
+
+    // ★ UX向上：正解なら自動で次へ
+    if (ok) {
+      setTimeout(() => {
+        // まだ問題が残っていて、ステージクリア画面じゃない場合のみ
+        if (deckIndex < deck.length) {
+          next();
+        } else {
+          // 最後の問題だった場合はすぐに次へ（クリア画面表示のため）
+          next();
+        }
+      }, 600); // 0.6秒後に遷移
     }
-    if (!parsed.length) throw new Error('有効なデータが0件でした。');
+  }
 
-    allItems = parsed;
+  function next(){
+    if (!deck.length) return;
 
-    const set = new Set(parsed.map(x => x.type));
-    types = sortTypesWithOrder(Array.from(set));
+    // 全問終了チェック
+    if (deckIndex >= deck.length) {
+      showClearUI();
+      return;
+    }
 
-    document.getElementById('total').textContent = String(allItems.length);
-    document.getElementById('typeCount').textContent = String(types.length);
+    show(deck[deckIndex]);
+    deckIndex++;
+    updateRemain();
+  }
 
-    buildTypeFilter(types);
-    buildButtons(types);
-
-    document.getElementById('hint').textContent =
-      `読み込みOK：${allItems.length}件 / タイプ：${types.length}種。`;
-
+  function resetScore(){
+    if(!confirm("現在の周回のスコアをリセットしますか？（累計レベルは維持されます）")) return;
+    count = 0;
+    correct = 0;
+    renderScore();
+    lap = 0;
     applyFiltersAndReady();
-  }
-
-  // filterType: __ALL__ / __BS__ / __PL__ / __OTHER__ / 具体type
-  function allowByFilter(xType, filterType){
-    if (filterType === '__ALL__') return true;
-    if (filterType === '__BS__') return BS_TYPES.has(xType);
-    if (filterType === '__PL__') return PL_TYPES.has(xType);
-    if (filterType === '__OTHER__') return xType === 'その他';
-    return xType === filterType;
-  }
-
-  function buildTypeFilter(typeList){
-    const sel = document.getElementById('typeFilter');
-    const cur = sel.value;
-    sel.innerHTML = '';
-
-    const topOptions = [
-      { label: 'すべて', value: '__ALL__' },
-      { label: '貸借対照表（BS）', value: '__BS__' },
-      { label: '損益計算書（PL）', value: '__PL__' },
-      { label: 'その他のみ', value: '__OTHER__' },
-    ];
-    for (const o of topOptions) {
-      const opt = document.createElement('option');
-      opt.textContent = o.label;
-      opt.value = o.value;
-      sel.appendChild(opt);
-    }
-
-    const sep = document.createElement('option');
-    sep.textContent = '────────';
-    sep.value = '__SEP__';
-    sep.disabled = true;
-    sel.appendChild(sep);
-
-    for (const t of typeList) {
-      const opt = document.createElement('option');
-      opt.textContent = t;
-      opt.value = t;
-      sel.appendChild(opt);
-    }
-
-    const allowedVals = new Set(['__ALL__','__BS__','__PL__','__OTHER__', ...typeList]);
-    sel.value = allowedVals.has(cur) ? cur : '__ALL__';
-
-    sel.onchange = () => {
-      if (sel.value === '__SEP__') sel.value = '__ALL__';
-      applyFiltersAndReady();
-    };
-    document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
   }
 
   function buildButtons(typeList){
@@ -342,11 +501,54 @@
     });
   }
 
+  function buildTypeFilter(typeList){
+    const sel = document.getElementById('typeFilter');
+    const cur = sel.value;
+    sel.innerHTML = '';
+
+    const topOptions = [
+      { label: 'すべて', value: '__ALL__' },
+      { label: '貸借対照表（BS）のみ', value: '__BS__' },
+      { label: '損益計算書（PL）のみ', value: '__PL__' },
+      { label: 'その他のみ', value: '__OTHER__' },
+    ];
+    for (const o of topOptions) {
+      const opt = document.createElement('option');
+      opt.textContent = o.label;
+      opt.value = o.value;
+      sel.appendChild(opt);
+    }
+
+    const sep = document.createElement('option');
+    sep.textContent = '────────';
+    sep.disabled = true;
+    sel.appendChild(sep);
+
+    for (const t of typeList) {
+      const opt = document.createElement('option');
+      opt.textContent = t;
+      opt.value = t;
+      sel.appendChild(opt);
+    }
+    sel.value = '__ALL__';
+    
+    sel.onchange = () => applyFiltersAndReady();
+    document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
+  }
+
+  function allowByFilter(xType, filterType){
+    if (filterType === '__ALL__') return true;
+    if (filterType === '__BS__') return BS_TYPES.has(xType);
+    if (filterType === '__PL__') return PL_TYPES.has(xType);
+    if (filterType === '__OTHER__') return xType === 'その他';
+    return xType === filterType;
+  }
+
   function applyFiltersAndReady(){
+    showQuizUI();
     const includeOther = document.getElementById('toggleOther').checked;
     const filterType = document.getElementById('typeFilter').value;
 
-    // 1) まず条件で絞る
     let filtered = allItems.filter(x => {
       if (!includeOther && x.type === 'その他') return false;
       if (!allowByFilter(x.type, filterType)) return false;
@@ -354,124 +556,74 @@
     });
 
     if (!filtered.length){
-      deck = []; deckIndex = 0; lap = 0;
-      document.getElementById('lap').textContent = "0";
-      document.getElementById('account').textContent = '出題できるデータが0件';
-      document.getElementById('result').innerHTML = `<span class="warn">条件を見直してください。</span>`;
-      document.getElementById('used').textContent = "0";
-      document.getElementById('remain').textContent = "0";
+      document.getElementById('account').textContent = '該当データなし';
+      document.getElementById('buttons').innerHTML = '';
       return;
     }
 
-    // 2) ★最大20件に制限（ここがポイント）
     if (filtered.length > MAX_QUESTIONS) {
-      const tmp = [...filtered];
-      shuffle(tmp);
-      filtered = tmp.slice(0, MAX_QUESTIONS);
+      shuffle(filtered);
+      items = filtered.slice(0, MAX_QUESTIONS);
+    } else {
+      items = filtered;
     }
 
-    items = filtered;
-
-    // 山札準備
-    lap = 0;
+    lap = 0; 
+    document.getElementById('lap').textContent = "0";
     prepareDeck();
     next();
   }
 
-  function renderScore(){
-    document.getElementById("count").textContent = count;
-    document.getElementById("correct").textContent = correct;
-    const rate = count === 0 ? 0 : Math.round((correct / count) * 100);
-    document.getElementById("rate").textContent = rate;
-  }
+  // 文字列データから読み込む（fetch不要）
+  function loadDataFromString() {
+    try {
+      const lines = RAW_CSV_DATA.split(/\r?\n/).filter(l => l.trim().length > 0);
+      const header = lines.shift().split(',').map(s => s.trim());
+      const idxAccount = header.indexOf('account');
+      const idxType = header.indexOf('type');
 
-  function show(item){
-    current = item;
-    answered = false;
-    document.getElementById("account").textContent = item ? item.name : "—";
-    document.getElementById("result").textContent = "";
-  }
+      const parsed = [];
+      for (const line of lines) {
+        const cols = line.split(',').map(s => s.trim());
+        const name = cols[idxAccount];
+        const rawType = cols[idxType];
+        if (name && rawType) {
+          parsed.push({ name, type: normalizeType(rawType) });
+        }
+      }
+      allItems = parsed;
+      const set = new Set(parsed.map(x => x.type));
+      types = sortTypesWithOrder(Array.from(set));
 
-  function answer(type){
-    if (!current || answered) return;
-    answered = true;
-    count++;
-
-    const ok = (type === current.type);
-    if (ok) correct++;
-
-    document.getElementById("result").innerHTML =
-      ok
-        ? `<span class="ok">正解！</span>（${current.name} → ${current.type}）`
-        : `<span class="ng">不正解</span>（あなた：${type} / 正解：${current.type}）`;
-
-    renderScore();
-  }
-
-  function next(){
-    if (!deck.length) return;
-
-    if (deckIndex >= deck.length) {
-      prepareDeck(); // 1周終わったら再シャッフル
+      buildTypeFilter(types);
+      buildButtons(types);
+      applyFiltersAndReady();
+    } catch(e) {
+      alert("データ読み込みエラー: " + e);
     }
-
-    show(deck[deckIndex]);
-    deckIndex++;
-    updateRemain();
   }
 
-  function resetScore(){
-    count = 0;
-    correct = 0;
-    renderScore();
-
-    lap = 0;
-    if (items.length) {
-      prepareDeck();
+  // ★ キーボード操作 (Enter/Space)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      // ステージクリア画面なら「次へ」
+      if (document.getElementById('stageClear').style.display === 'block') {
+        startNextLap();
+        e.preventDefault();
+        return;
+      }
+      // 通常時もスキップ/次へ
       next();
+      e.preventDefault();
     }
-  }
+  });
 
-  async function reload(){
-    document.getElementById("account").textContent = "読み込み中…";
-    document.getElementById("result").textContent = "";
-    document.getElementById("hint").textContent = "";
-    document.getElementById("buttons").innerHTML = "";
-    document.getElementById("typeFilter").innerHTML = `<option value="__ALL__">すべて</option>`;
-    document.getElementById('total').textContent = "0";
-    document.getElementById('typeCount').textContent = "0";
-    document.getElementById('lap').textContent = "0";
-    document.getElementById('used').textContent = "0";
-    document.getElementById('remain').textContent = "0";
-
-    allItems = [];
-    items = [];
-    types = [];
-    current = null;
-    answered = false;
-
-    deck = [];
-    deckIndex = 0;
-    lap = 0;
-
-    count = 0;
-    correct = 0;
-    renderScore();
-
-    try{
-      await loadCSV();
-    } catch(e){
-      document.getElementById("account").textContent = "CSV読み込みエラー";
-      document.getElementById("result").innerHTML =
-        `<span class="warn">エラー：</span>${String(e.message).replace(/\n/g,'<br>')}`;
-    }
-  }
-
-  (async function init(){
-    await reload();
+  (function init(){
+    loadProgress();      // セーブデータ読み込み
+    updateCharacterUI(); // キャラ表示
+    loadDataFromString();// 問題データ読み込み
   })();
 </script>
 </body>
 </html>
-
 
