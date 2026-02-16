@@ -185,7 +185,7 @@
   </div>
 
 <script>
-  // データ（簡略化のため変数に格納）
+  // ★ データに特別利益・特別損失の科目を追加しました
   const RAW_CSV_DATA = `account,type
 現金,流動資産
 小口現金,流動資産
@@ -217,6 +217,10 @@
 売上,営業収益
 受取利息,営業外収益
 受取配当金,営業外収益
+固定資産売却損,特別損失
+火災損失,特別損失
+固定資産売却益,特別利益
+償却債権取立益,特別利益
 損益,その他`;
 
   const MAX_QUESTIONS = 20;
@@ -236,21 +240,22 @@
   let totalCorrectAccumulated = 0;
   let currentCharacter = CHARACTERS[0];
   let playerName = "";
-  
-  // ★ 苦手リスト用の変数
   let mistakeList = [];
 
   const TYPE_ORDER = ['流動資産','固定資産','流動負債','固定負債','純資産','営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益','その他'];
+  
+  // ★ ここに「特別損失」「特別利益」の色グループ定義を追加しました
   const TYPE_TO_GROUP = new Map([
     ['流動資産','asset'], ['固定資産','asset'],['流動負債','liab'], ['固定負債','liab'],['純資産','equity'],
-    ['営業費用','exp'], ['販売費および一般管理費','exp'], ['営業外費用','exp'],['営業収益','rev'], ['営業外収益','rev'],['その他','other']
+    ['営業費用','exp'], ['販売費および一般管理費','exp'], ['営業外費用','exp'],['特別損失','exp'],
+    ['営業収益','rev'], ['営業外収益','rev'],['特別利益','rev'],
+    ['その他','other']
   ]);
   const GROUP_TO_BTNCLASS = { asset: 'btn-asset', liab: 'btn-liab', equity:'btn-equity', exp: 'btn-exp', rev: 'btn-rev', other:'btn-other' };
   
   let allItems = [], items = [], deck = [], deckIndex = 0, current = null, answered = false;
   let count = 0, correct = 0, lap = 0;
 
-  // --- ★ 苦手リスト機能 ---
   function loadMistakes(){
     const saved = localStorage.getItem('bokiApp_mistakes');
     if(saved) mistakeList = JSON.parse(saved);
@@ -261,7 +266,6 @@
     updateMistakeBtn();
   }
   function addMistake(item){
-    // すでにリストにあるか確認（重複回避）
     const exists = mistakeList.some(m => m.name === item.name);
     if(!exists){
       mistakeList.push({ name: item.name, type: item.type });
@@ -271,7 +275,7 @@
   function removeMistake(name){
     mistakeList = mistakeList.filter(m => m.name !== name);
     saveMistakes();
-    renderMistakeList(); // リスト再描画
+    renderMistakeList();
   }
   function updateMistakeBtn(){
     const btn = document.getElementById('mistakeBtn');
@@ -310,7 +314,6 @@
       container.appendChild(div);
     });
   }
-  // -----------------------
 
   function lockNameTry() {
     const input = document.getElementById('playerName');
@@ -334,7 +337,7 @@
       document.getElementById('playerName').value = n;
       document.getElementById('playerName').readOnly = true;
     }
-    loadMistakes(); // 苦手リスト読み込み
+    loadMistakes();
   }
   function saveProgress() {
     localStorage.setItem('bokiApp_totalCorrect', totalCorrectAccumulated);
@@ -347,7 +350,6 @@
     document.getElementById('charName').textContent = chara.name;
     document.getElementById('totalAccumulated').textContent = totalCorrectAccumulated;
     
-    // 次のレベル
     const idx = CHARACTERS.indexOf(chara);
     if(idx < CHARACTERS.length - 1){
        document.getElementById('charNext').textContent = `あと ${CHARACTERS[idx+1].score - totalCorrectAccumulated} 問で進化`;
@@ -356,7 +358,6 @@
     }
   }
   
-  // UI監視（アンチチート）
   setInterval(() => {
     if(document.getElementById('totalAccumulated').textContent != totalCorrectAccumulated)
        document.getElementById('totalAccumulated').textContent = totalCorrectAccumulated;
@@ -413,7 +414,6 @@
       saveProgress(); updateCharacterUI();
       document.getElementById("result").innerHTML = `<span class="ok">⭕ 正解！</span>`;
     } else {
-      // ★ 不正解なら苦手リストに追加
       addMistake(current);
       document.getElementById("result").innerHTML = `<span class="ng">❌ 不正解...</span><span class="muted small">正解は ${current.type}</span>`;
     }
@@ -443,12 +443,11 @@
     allItems = lines.map(l=>{
       const c = l.split(','); return { name:c[0].trim(), type:normalizeType(c[1]) };
     });
-    const types = [...new Set(allItems.map(x=>x.type))]; // 簡易ソートなし
-    // 簡易的に全ボタン生成
-    const fixedTypes = ['流動資産','固定資産','流動負債','固定負債','純資産','営業費用','販売費および一般管理費','営業外費用','営業収益','営業外収益','その他'];
+    
+    // ★ ここに特別損失・特別利益を追加しました
+    const fixedTypes = ['流動資産','固定資産','流動負債','固定負債','純資産','営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益','その他'];
     buildButtons(fixedTypes);
     
-    // フィルタなどの初期化は省略（全件モード）
     items = allItems;
     startNextLap();
   }
