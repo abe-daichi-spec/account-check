@@ -43,7 +43,7 @@
     
     .typeBtn{ padding: 16px 10px; min-height: 60px; font-size: 16px; font-weight: 800; line-height: 1.2; }
 
-    /* ★ 色分け修正（!important をつけて強制的に色を適用） */
+    /* 色分け（強制適用） */
     .btn-asset { background-color: var(--asset-bg) !important; border-color: var(--asset-bd) !important; color: #004488 !important; }
     .btn-liab  { background-color: var(--liab-bg) !important;  border-color: var(--liab-bd) !important;  color: #880000 !important; }
     .btn-equity{ background-color: var(--equity-bg) !important;border-color: var(--equity-bd) !important;color: #330088 !important; }
@@ -69,7 +69,6 @@
     #playerName:read-only { background-color: #eee; color: #555; border-color: #ddd; }
     @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
-    /* 凡例用タグ */
     .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top: 12px; }
     .tag { font-size:11px; padding:3px 8px; border-radius:999px; border:1px solid var(--border); user-select: none; }
     .tag.asset { background: var(--asset-bg); border-color: var(--asset-bd); }
@@ -101,7 +100,6 @@
       font-size: 12px; padding: 4px 10px; border: 1px solid #ccc;
       background: #f0f0f0; border-radius: 4px; margin-left: auto;
     }
-
   </style>
 </head>
 
@@ -219,6 +217,10 @@
     exp: 'btn-exp', rev: 'btn-rev', other:'btn-other' 
   };
   
+  // ★ BS/PLフィルタリング用の定義
+  const BS_TYPES = new Set(['流動資産','固定資産','流動負債','固定負債','純資産']);
+  const PL_TYPES = new Set(['営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益']);
+
   let allItems = [], items = [], deck = [], deckIndex = 0, current = null, answered = false;
   let count = 0, correct = 0, lap = 0;
 
@@ -394,7 +396,6 @@
     const wrap = document.getElementById('buttons'); wrap.innerHTML = '';
     typeList.forEach(t => {
       const btn = document.createElement('button');
-      // クラスを安全に追加
       btn.classList.add('typeBtn');
       const grp = TYPE_TO_GROUP.get(t) || 'other';
       const colorClass = GROUP_TO_BTNCLASS[grp] || 'btn-other';
@@ -406,7 +407,70 @@
     });
   }
 
-  // ★ fetchを使ったCSV読み込み処理
+  // ★ フィルタリング機能（復活！）
+  function buildTypeFilter(){
+    const sel = document.getElementById('typeFilter');
+    // 初期化（すべて以外を消す）
+    sel.innerHTML = '';
+    const topOptions = [
+      { label: 'すべて', value: '__ALL__' },
+      { label: '貸借対照表（BS）のみ', value: '__BS__' },
+      { label: '損益計算書（PL）のみ', value: '__PL__' },
+      { label: 'その他のみ', value: '__OTHER__' },
+    ];
+    for (const o of topOptions) {
+      const opt = document.createElement('option');
+      opt.textContent = o.label;
+      opt.value = o.value;
+      sel.appendChild(opt);
+    }
+    
+    // イベントリスナー設定
+    sel.onchange = () => applyFiltersAndReady();
+    document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
+  }
+
+  function allowByFilter(xType, filterType){
+    if (filterType === '__ALL__') return true;
+    if (filterType === '__BS__') return BS_TYPES.has(xType);
+    if (filterType === '__PL__') return PL_TYPES.has(xType);
+    if (filterType === '__OTHER__') return xType === 'その他';
+    return false;
+  }
+
+  function applyFiltersAndReady(){
+    showQuizUI();
+    const includeOther = document.getElementById('toggleOther').checked;
+    const filterType = document.getElementById('typeFilter').value;
+
+    let filtered = allItems.filter(x => {
+      // 「その他を含める」チェックが外れていて、かつ「その他」タイプなら除外
+      if (!includeOther && x.type === 'その他') return false;
+      // フィルタリング判定
+      if (!allowByFilter(x.type, filterType)) return false;
+      return true;
+    });
+
+    if (!filtered.length){
+      document.getElementById('account').textContent = '該当データなし';
+      document.getElementById('buttons').innerHTML = '';
+      return;
+    }
+
+    if (filtered.length > MAX_QUESTIONS) {
+      shuffle(filtered);
+      items = filtered.slice(0, MAX_QUESTIONS);
+    } else {
+      items = filtered;
+    }
+
+    lap = 0; 
+    document.getElementById('lap').textContent = "0"; // 表示上の周回リセット
+    prepareDeck();
+    next();
+  }
+
+  // CSV読み込み
   async function loadDataFromCSV() {
     try {
       const res = await fetch('./accounts.csv?' + new Date().getTime());
@@ -414,7 +478,6 @@
       const text = await res.text();
       
       const lines = text.split(/\r?\n/).filter(l => l.trim());
-      // header削除
       if(lines.length > 0 && lines[0].includes('account')) lines.shift();
 
       allItems = lines.map(l=>{
@@ -426,8 +489,10 @@
       const fixedTypes = ['流動資産','固定資産','流動負債','固定負債','純資産','営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益','その他'];
       buildButtons(fixedTypes);
       
-      items = allItems;
-      startNextLap();
+      // ★ フィルターメニューを構築し、初期フィルタを適用
+      buildTypeFilter();
+      applyFiltersAndReady();
+
     } catch(e){
       document.getElementById('account').textContent = "読込エラー";
       document.getElementById('result').textContent = "accounts.csvの読み込みに失敗しました: " + e;
