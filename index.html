@@ -48,16 +48,6 @@
     .btn-rev   { background: var(--rev-bg);   border-color: var(--rev-bd);   color: #006622; }
     .btn-other { background: var(--other-bg); border-color: var(--other-bd); color: #444; }
 
-    .summary { margin-top: 20px; padding-top:10px; border-top: 1px solid #eee; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
-    .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top: 12px; }
-    .tag { font-size:11px; padding:3px 8px; border-radius:999px; border:1px solid var(--border); user-select: none; }
-    .tag.asset { background: var(--asset-bg); border-color: var(--asset-bd); }
-    .tag.liab  { background: var(--liab-bg);  border-color: var(--liab-bd); }
-    .tag.equity{ background: var(--equity-bg);border-color: var(--equity-bd);}
-    .tag.exp   { background: var(--exp-bg);   border-color: var(--exp-bd); }
-    .tag.rev   { background: var(--rev-bg);   border-color: var(--rev-bd); }
-    .tag.other { background: var(--other-bg); border-color: var(--other-bd); }
-
     /* ステータスバー（動く背景） */
     .status-bar { 
       display: flex; align-items: center; gap: 16px; 
@@ -124,7 +114,7 @@
 
     <div id="quizArea">
       <div class="muted">次の勘定科目の「タイプ」は？</div>
-      <div id="account" class="big">スタート！</div>
+      <div id="account" class="big">読み込み中...</div>
     </div>
 
     <div id="stageClear" style="display:none; text-align:center; padding: 24px 0;">
@@ -176,7 +166,7 @@
       <p class="small muted">「削除」を押すとリストから消えます。</p>
       
       <div id="mistakeListContainer" style="max-height:300px; overflow-y:auto; border:1px solid #eee; border-radius:8px; padding:10px;">
-        </div>
+      </div>
       
       <div style="margin-top:20px; text-align:center;">
         <button class="actionBtn" onclick="closeMistakeModal()">閉じて学習に戻る</button>
@@ -185,44 +175,6 @@
   </div>
 
 <script>
-  // ★ データに特別利益・特別損失の科目を追加しました
-  const RAW_CSV_DATA = `account,type
-現金,流動資産
-小口現金,流動資産
-当座預金,流動資産
-受取手形,流動資産
-売掛金,流動資産
-繰越商品,流動資産
-貸倒引当金,流動資産
-消耗品,流動資産
-仮払金,流動資産
-前払金,流動資産
-建物,固定資産
-備品,固定資産
-車両運搬具,固定資産
-土地,固定資産
-支払手形,流動負債
-買掛金,流動負債
-前受金,流動負債
-未払金,流動負債
-預り金,流動負債
-借入金,流動負債
-資本金,純資産
-仕入,営業費用
-給料,販売費および一般管理費
-通信費,販売費および一般管理費
-水道光熱費,販売費および一般管理費
-支払家賃,販売費および一般管理費
-支払利息,営業外費用
-売上,営業収益
-受取利息,営業外収益
-受取配当金,営業外収益
-固定資産売却損,特別損失
-火災損失,特別損失
-固定資産売却益,特別利益
-償却債権取立益,特別利益
-損益,その他`;
-
   const MAX_QUESTIONS = 20;
   const CHARACTERS = [
     { score: 0,    icon: '🥚', name: 'Lv.1 簿記のたまご' },
@@ -244,7 +196,7 @@
 
   const TYPE_ORDER = ['流動資産','固定資産','流動負債','固定負債','純資産','営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益','その他'];
   
-  // ★ ここに「特別損失」「特別利益」の色グループ定義を追加しました
+  // ★ 特別損益対応
   const TYPE_TO_GROUP = new Map([
     ['流動資産','asset'], ['固定資産','asset'],['流動負債','liab'], ['固定負債','liab'],['純資産','equity'],
     ['営業費用','exp'], ['販売費および一般管理費','exp'], ['営業外費用','exp'],['特別損失','exp'],
@@ -281,11 +233,7 @@
     const btn = document.getElementById('mistakeBtn');
     const countSpan = document.getElementById('mistakeCount');
     countSpan.textContent = mistakeList.length;
-    if(mistakeList.length > 0) {
-      btn.style.display = "inline-block";
-    } else {
-      btn.style.display = "none";
-    }
+    btn.style.display = (mistakeList.length > 0) ? "inline-block" : "none";
   }
   function openMistakeModal(){
     renderMistakeList();
@@ -358,6 +306,7 @@
     }
   }
   
+  // Anti-Cheat Check
   setInterval(() => {
     if(document.getElementById('totalAccumulated').textContent != totalCorrectAccumulated)
        document.getElementById('totalAccumulated').textContent = totalCorrectAccumulated;
@@ -437,24 +386,41 @@
       wrap.appendChild(btn);
     });
   }
-  function loadDataFromString() {
-    const lines = RAW_CSV_DATA.split(/\r?\n/).filter(l => l.trim());
-    lines.shift(); // header
-    allItems = lines.map(l=>{
-      const c = l.split(','); return { name:c[0].trim(), type:normalizeType(c[1]) };
-    });
-    
-    // ★ ここに特別損失・特別利益を追加しました
-    const fixedTypes = ['流動資産','固定資産','流動負債','固定負債','純資産','営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益','その他'];
-    buildButtons(fixedTypes);
-    
-    items = allItems;
-    startNextLap();
+
+  // ★ fetchを使ったCSV読み込み処理
+  async function loadDataFromCSV() {
+    try {
+      // キャッシュ対策でタイムスタンプ付与
+      const res = await fetch('./accounts.csv?' + new Date().getTime());
+      if(!res.ok) throw new Error("File not found");
+      const text = await res.text();
+      
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      // 先頭行(header)に'account'が含まれていたら削除
+      if(lines.length > 0 && lines[0].includes('account')) lines.shift();
+
+      allItems = lines.map(l=>{
+        const c = l.split(','); 
+        // データの不備（カンマがない等）を除外
+        if(c.length < 2) return null;
+        return { name:c[0].trim(), type:normalizeType(c[1]) };
+      }).filter(x => x);
+      
+      // ボタンの種類定義（特別損益を含む）
+      const fixedTypes = ['流動資産','固定資産','流動負債','固定負債','純資産','営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益','その他'];
+      buildButtons(fixedTypes);
+      
+      items = allItems;
+      startNextLap();
+    } catch(e){
+      document.getElementById('account').textContent = "読込エラー";
+      document.getElementById('result').textContent = "accounts.csvの読み込みに失敗しました: " + e;
+    }
   }
 
   (function init(){
     loadProgress();
-    loadDataFromString();
+    loadDataFromCSV(); // CSVファイル読み込み開始
     updateCharacterUI();
   })();
 </script>
