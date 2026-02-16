@@ -8,7 +8,7 @@
     :root{
       --border:#ddd; --border2:#ccc; --text-muted:#666;
       --ok:#0a7; --ng:#c33; --radius:14px;
-      /* 色分け */
+      /* 色分けパレット */
       --asset-bg: #eef6ff; --asset-bd:#b7d7ff;
       --liab-bg:  #fff2f2; --liab-bd:#ffc2c2;
       --equity-bg:#f3efff; --equity-bd:#d2c6ff;
@@ -28,11 +28,12 @@
     label { user-select:none; cursor: pointer; }
     select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border2); background: #fff; }
     input[type="checkbox"] { transform: scale(1.15); margin-right: 4px; }
+    
+    /* ボタン基本スタイル */
     button { border-radius: 14px; border: 1px solid var(--border2); background: #fff; cursor: pointer; transition: all 0.2s; }
     button:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .actionBtn { padding: 10px 16px; font-weight: 700; color: #444; }
 
-    /* 苦手リストボタン */
     #mistakeBtn { color: #c33; border-color: #fcc; background: #fff5f5; font-weight: bold; display: none; }
     
     .grid { display: grid; gap: 10px; margin-top: 16px; }
@@ -41,14 +42,15 @@
     @media (min-width: 861px){ .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
     
     .typeBtn{ padding: 16px 10px; min-height: 60px; font-size: 16px; font-weight: 800; line-height: 1.2; }
-    .btn-asset { background: var(--asset-bg); border-color: var(--asset-bd); color: #004488; }
-    .btn-liab  { background: var(--liab-bg);  border-color: var(--liab-bd);  color: #880000; }
-    .btn-equity{ background: var(--equity-bg);border-color: var(--equity-bd);color: #330088; }
-    .btn-exp   { background: var(--exp-bg);   border-color: var(--exp-bd);   color: #884400; }
-    .btn-rev   { background: var(--rev-bg);   border-color: var(--rev-bd);   color: #006622; }
-    .btn-other { background: var(--other-bg); border-color: var(--other-bd); color: #444; }
 
-    /* ステータスバー（動く背景） */
+    /* ★ 色分け修正（!important をつけて強制的に色を適用） */
+    .btn-asset { background-color: var(--asset-bg) !important; border-color: var(--asset-bd) !important; color: #004488 !important; }
+    .btn-liab  { background-color: var(--liab-bg) !important;  border-color: var(--liab-bd) !important;  color: #880000 !important; }
+    .btn-equity{ background-color: var(--equity-bg) !important;border-color: var(--equity-bd) !important;color: #330088 !important; }
+    .btn-exp   { background-color: var(--exp-bg) !important;   border-color: var(--exp-bd) !important;   color: #884400 !important; }
+    .btn-rev   { background-color: var(--rev-bg) !important;   border-color: var(--rev-bd) !important;   color: #006622 !important; }
+    .btn-other { background-color: var(--other-bg) !important; border-color: var(--other-bd) !important; color: #444 !important; }
+
     .status-bar { 
       display: flex; align-items: center; gap: 16px; 
       margin-bottom: 20px; padding: 16px; border-radius: 12px;
@@ -67,7 +69,18 @@
     #playerName:read-only { background-color: #eee; color: #555; border-color: #ddd; }
     @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
-    /* ★ 苦手リストモーダル */
+    /* 凡例用タグ */
+    .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top: 12px; }
+    .tag { font-size:11px; padding:3px 8px; border-radius:999px; border:1px solid var(--border); user-select: none; }
+    .tag.asset { background: var(--asset-bg); border-color: var(--asset-bd); }
+    .tag.liab  { background: var(--liab-bg);  border-color: var(--liab-bd); }
+    .tag.equity{ background: var(--equity-bg);border-color: var(--equity-bd);}
+    .tag.exp   { background: var(--exp-bg);   border-color: var(--exp-bd); }
+    .tag.rev   { background: var(--rev-bg);   border-color: var(--rev-bd); }
+    .tag.other { background: var(--other-bg); border-color: var(--other-bd); }
+
+    .summary { margin-top: 20px; padding-top:10px; border-top: 1px solid #eee; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
+    
     #mistakeModal {
       display: none; position: fixed; top:0; left:0; width:100%; height:100%;
       background: rgba(0,0,0,0.5); z-index: 100; padding: 20px; box-sizing: border-box;
@@ -194,16 +207,17 @@
   let playerName = "";
   let mistakeList = [];
 
-  const TYPE_ORDER = ['流動資産','固定資産','流動負債','固定負債','純資産','営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益','その他'];
-  
-  // ★ 特別損益対応
+  // グループ定義
   const TYPE_TO_GROUP = new Map([
     ['流動資産','asset'], ['固定資産','asset'],['流動負債','liab'], ['固定負債','liab'],['純資産','equity'],
     ['営業費用','exp'], ['販売費および一般管理費','exp'], ['営業外費用','exp'],['特別損失','exp'],
     ['営業収益','rev'], ['営業外収益','rev'],['特別利益','rev'],
     ['その他','other']
   ]);
-  const GROUP_TO_BTNCLASS = { asset: 'btn-asset', liab: 'btn-liab', equity:'btn-equity', exp: 'btn-exp', rev: 'btn-rev', other:'btn-other' };
+  const GROUP_TO_BTNCLASS = { 
+    asset: 'btn-asset', liab: 'btn-liab', equity:'btn-equity', 
+    exp: 'btn-exp', rev: 'btn-rev', other:'btn-other' 
+  };
   
   let allItems = [], items = [], deck = [], deckIndex = 0, current = null, answered = false;
   let count = 0, correct = 0, lap = 0;
@@ -306,7 +320,6 @@
     }
   }
   
-  // Anti-Cheat Check
   setInterval(() => {
     if(document.getElementById('totalAccumulated').textContent != totalCorrectAccumulated)
        document.getElementById('totalAccumulated').textContent = totalCorrectAccumulated;
@@ -381,8 +394,14 @@
     const wrap = document.getElementById('buttons'); wrap.innerHTML = '';
     typeList.forEach(t => {
       const btn = document.createElement('button');
-      btn.className = 'typeBtn ' + (GROUP_TO_BTNCLASS[TYPE_TO_GROUP.get(t)||'other']||'btn-other');
-      btn.textContent = t; btn.onclick = () => answer(t);
+      // クラスを安全に追加
+      btn.classList.add('typeBtn');
+      const grp = TYPE_TO_GROUP.get(t) || 'other';
+      const colorClass = GROUP_TO_BTNCLASS[grp] || 'btn-other';
+      btn.classList.add(colorClass);
+      
+      btn.textContent = t; 
+      btn.onclick = () => answer(t);
       wrap.appendChild(btn);
     });
   }
@@ -390,23 +409,20 @@
   // ★ fetchを使ったCSV読み込み処理
   async function loadDataFromCSV() {
     try {
-      // キャッシュ対策でタイムスタンプ付与
       const res = await fetch('./accounts.csv?' + new Date().getTime());
       if(!res.ok) throw new Error("File not found");
       const text = await res.text();
       
       const lines = text.split(/\r?\n/).filter(l => l.trim());
-      // 先頭行(header)に'account'が含まれていたら削除
+      // header削除
       if(lines.length > 0 && lines[0].includes('account')) lines.shift();
 
       allItems = lines.map(l=>{
         const c = l.split(','); 
-        // データの不備（カンマがない等）を除外
         if(c.length < 2) return null;
         return { name:c[0].trim(), type:normalizeType(c[1]) };
       }).filter(x => x);
       
-      // ボタンの種類定義（特別損益を含む）
       const fixedTypes = ['流動資産','固定資産','流動負債','固定負債','純資産','営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益','その他'];
       buildButtons(fixedTypes);
       
@@ -420,7 +436,7 @@
 
   (function init(){
     loadProgress();
-    loadDataFromCSV(); // CSVファイル読み込み開始
+    loadDataFromCSV();
     updateCharacterUI();
   })();
 </script>
